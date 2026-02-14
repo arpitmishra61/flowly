@@ -66,10 +66,9 @@ model AvailableAction {
 }
 
 model ZapRun {
-  id    Int    @id @default(autoincrement())
-  zapId String
-  zap   Zap    @relation(fields: [zapId], references: [id])
-
+  id           Int           @id @default(autoincrement())
+  zapId        String
+  zap          Zap           @relation(fields: [zapId], references: [id])
   zapRunOutbox ZapRunOutbox?
 }
 
