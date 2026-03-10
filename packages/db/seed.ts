@@ -1,10 +1,12 @@
+import { AvailableAction } from "./generated/prisma/client";
 import db from "./client";
 
 async function main() {
-  const availableActionsOrTriggers = [
+  const availableTriggers = [
     {
-      name: "Google Drive",
-      imageUrl: "https://cdn.simpleicons.org/googledrive",
+      name: "Webhook",
+      imageUrl: "https://cdn.simpleicons.org/looker",
+      disabled: false,
     },
     {
       name: "Gmail",
@@ -14,32 +16,32 @@ async function main() {
       name: "Slack",
       imageUrl: "https://cdn.simpleicons.org/slack",
     },
-    {
-      name: "Notion",
-      imageUrl: "https://cdn.simpleicons.org/notion",
-    },
-    {
-      name: "Airtable",
-      imageUrl: "https://cdn.simpleicons.org/airtable",
-    },
-    {
-      name: "Trello",
-      imageUrl: "https://cdn.simpleicons.org/trello",
-    },
-    {
-      name: "Asana",
-      imageUrl: "https://cdn.simpleicons.org/asana",
-    },
-    {
-      name: "Dropbox",
-      imageUrl: "https://cdn.simpleicons.org/dropbox",
-    },
   ];
 
-  for (const item of availableActionsOrTriggers) {
+  const availableActions = [
+    {
+      name: "Gmail",
+      imageUrl: "https://cdn.simpleicons.org/gmail",
+      disabled: false,
+    },
+    {
+      name: "Webhook",
+      imageUrl: "https://cdn.simpleicons.org/looker",
+    },
+
+    {
+      name: "Slack",
+      imageUrl: "https://cdn.simpleicons.org/slack",
+    },
+  ];
+  await db.availableAction.deleteMany();
+  await db.availableTrigger.deleteMany();
+  for (const item of availableActions) {
     await db.availableAction.create({
       data: item,
     });
+  }
+  for (const item of availableTriggers) {
     await db.availableTrigger.create({
       data: item,
     });
