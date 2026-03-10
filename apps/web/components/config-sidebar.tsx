@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { ZapNode } from "@/lib/types"
 import { ChevronRight } from "lucide-react"
 import Image from "next/image"
+import { useEffect, useState } from "react"
+import axios from "axios"
 
 interface ConfigSidebarProps {
   open: boolean
@@ -23,9 +25,20 @@ export function ConfigSidebar({ open, onOpenChange, node, onSave, onConfigure }:
     })
     onOpenChange(false)
   }
+  const [option, setOptions] = useState<null | [{ name: string }]>(null)
+  const [url, setUrl] = useState<string>("")
+
+  const API = "http://localhost:5000"
+  useEffect(() => {
+
+    axios.get<[{ name: string }]>(`${API}/api/v1/triggers/options/1`).then(res => {
+      setOptions(res.data)
+    })
+
+  }, [])
 
   if (!node?.app) return null
-
+  console.log(url)
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent onClose={() => onOpenChange(false)} side="right">
@@ -79,11 +92,8 @@ export function ConfigSidebar({ open, onOpenChange, node, onSave, onConfigure }:
             <select className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring">
               <option value="">Choose an event</option>
               {node.type === 'trigger' ? (
-                <>
-                  <option value="new-file">New File</option>
-                  <option value="updated-file">Updated File</option>
-                  <option value="new-folder">New Folder</option>
-                </>
+                option?.map(option => <option value={option.name}>{option.name}</option>)
+
               ) : (
                 <>
                   <option value="create-file">Create File</option>
@@ -95,18 +105,16 @@ export function ConfigSidebar({ open, onOpenChange, node, onSave, onConfigure }:
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Account</label>
-            <div className="p-4 rounded-lg border border-dashed bg-blue-50 border-blue-200">
-              <div className="flex items-start gap-2">
-                <div className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
-                  i
-                </div>
-                <p className="text-sm text-gray-700">
-                  You don't need to connect an account when creating a template.
-                  You will be able to map values using the integrations default sample values.
-                </p>
-              </div>
-            </div>
+            {option && <Button className="w-full" size="lg" disabled={!url} style={{ pointerEvents: url ? "none" : "auto" }} onClick={() => {
+              const id = crypto.randomUUID().slice(0, 12)
+              setUrl(`${API}/catch/${id}`)
+
+            }}>
+              Test The Webhook
+            </Button>
+            }
+            <hr />
+            {url && <p className="my-4 border border-black-500 p-1 rounded">{url}</p>}
           </div>
 
           {node.type === 'action' && (
@@ -126,7 +134,7 @@ export function ConfigSidebar({ open, onOpenChange, node, onSave, onConfigure }:
 
         <div className="absolute bottom-0 left-0 right-0 p-6 border-t bg-white">
           <Button onClick={handleSave} className="w-full" size="lg">
-            Continue
+            Finish
           </Button>
         </div>
       </SheetContent>
