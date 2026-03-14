@@ -26,7 +26,7 @@ const Sheet = ({ open, onOpenChange, children }: SheetProps) => {
 
   return (
     <div className="fixed inset-0 z-50">
-      <div 
+      <div
         className="fixed inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
         onClick={() => onOpenChange(false)}
       />
@@ -37,7 +37,7 @@ const Sheet = ({ open, onOpenChange, children }: SheetProps) => {
 
 const SheetContent = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { 
+  React.HTMLAttributes<HTMLDivElement> & {
     onClose?: () => void
     side?: "left" | "right" | "top" | "bottom"
   }
@@ -45,7 +45,7 @@ const SheetContent = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "fixed z-50 bg-white shadow-2xl transition-transform",
+      "fixed z-50 bg-white shadow-2xl transition-transform overflow-scroll",
       {
         "inset-y-0 right-0 h-full w-full sm:max-w-md border-l animate-slide-in": side === "right",
         "inset-y-0 left-0 h-full w-full sm:max-w-md border-r": side === "left",

@@ -23,8 +23,8 @@ export function AppSelectionModal({
   title = "Choose an app"
 }: AppSelectionModalProps) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [actions, setActions] = useState<Trigger[] | null>(null)
-  const [triggers, setTriggers] = useState<Action[] | null>(null)
+  const [actions, setActions] = useState<Action[] | null>(null)
+  const [triggers, setTriggers] = useState<Trigger[] | null>(null)
   useEffect(() => {
     Promise.all([axios.get<Trigger[]>(`${API}/api/v1/triggers`), axios.get<Action[]>(`${API}/api/v1/actions`)]).then(([triggersRes, actionsRes]) => {
 
@@ -41,6 +41,7 @@ export function AppSelectionModal({
   ) : []
 
   const handleSelectApp = (app: App) => {
+    console.log(app)
     onSelectApp(app)
     onOpenChange(false)
     setSearchQuery("")

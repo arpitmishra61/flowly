@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Plus } from "lucide-react"
 import { ZapNode } from "@/components/zap-node"
 import { AppSelectionModal } from "@/components/app-selection-modal"
 import { ConfigSidebar } from "@/components/config-sidebar"
 import { Button } from "@/components/ui/button"
 import { ZapNode as ZapNodeType, App } from "@/lib/types"
+import { config } from "process"
 
 export function ZapBuilder() {
   const [nodes, setNodes] = useState<ZapNodeType[]>([
@@ -15,6 +16,9 @@ export function ZapBuilder() {
 
   const [modalOpen, setModalOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarConfig, setSidebarConfig] = useState<[{ type: string, id: string, data: any }] | null>(null)
+  const sidebarData = useRef<{ type: string, id: string, data: any } | null>(null)
+
   const [currentNodeId, setCurrentNodeId] = useState<string | null>(null)
   const [modalType, setModalType] = useState<'trigger' | 'action'>('trigger')
 
@@ -28,6 +32,7 @@ export function ZapBuilder() {
 
     if (node.app && !changeReq) {
       // If app is already selected, open sidebar for configuration
+      sidebarData.current = sidebarConfig?.find(config => config.id === nodeId) || null
       setSidebarOpen(true)
     } else {
       // Otherwise, open modal to select app
@@ -158,13 +163,15 @@ export function ZapBuilder() {
         title={modalType === 'trigger' ? 'Choose a trigger app' : 'Choose an action app'}
       />
 
-      <ConfigSidebar
+      {sidebarOpen && <ConfigSidebar
         open={sidebarOpen}
         onOpenChange={setSidebarOpen}
         node={currentNode}
         onSave={handleSaveConfig}
+        sidebarData={sidebarData}
+        setSidebarConfig={setSidebarConfig}
         onConfigure={() => handleNodeClick(currentNodeId ?? "", true)}
-      />
+      />}
     </div>
   )
 }

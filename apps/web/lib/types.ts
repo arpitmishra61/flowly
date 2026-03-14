@@ -15,6 +15,19 @@ export interface ActionNode {
 }
 export type Action = Record<"id" | "name" | "imageUrl", string> & {
   disabled: Boolean;
+  options: { name: string }[];
+  metaData: TriggerMetaData;
+  selectedOption: string;
+};
+
+type TriggerMetaData = webhookTriggerMetaData | gmailTriggerMetaData;
+type webhookTriggerMetaData = {
+  webhookUrl: string;
+  jsonData: any;
+};
+type gmailTriggerMetaData = {
+  triggerType: "";
+  mailData: "";
 };
 export type Trigger = Action;
 
