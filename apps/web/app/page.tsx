@@ -1,8 +1,9 @@
+"use client"
 import { ZapBuilder } from "@/components/zap-builder"
-import { RecoilRoot } from "recoil"
+import { Provider } from "jotai"
 
 export default function Home() {
-  return <RecoilRoot>
+  return <Provider>
     <ZapBuilder />
-  </RecoilRoot>
+  </Provider>
 }

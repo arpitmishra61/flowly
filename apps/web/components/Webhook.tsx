@@ -1,29 +1,31 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Button } from './ui/button'
 import { AudioWaveform, CopyIcon, MoveRight, WebhookIcon } from 'lucide-react'
-import { useRecoilState } from 'recoil'
-import { TriggerState } from '@/atoms'
+import { useAtom } from 'jotai'
+import { fetchTriggerData, TriggerAtom } from '@/atoms'
 
 export default function Webhook() {
 
-    const [trigger, setTrigger] = useRecoilState(TriggerState)
+    const API = "http://localhost:5000";
+    const [trigger, setTrigger] = useAtom(TriggerAtom);
+    const [, fetchData] = useAtom(fetchTriggerData);
+    const metaData = trigger?.app?.metaData || {} as { jsonData: string, webhookUrl: string }
+    const { jsonData, webhookUrl } = metaData
+
+
     useEffect(() => {
-        /* no selected option ya no triggger uf it is null
-        then we fetch options
-        set it using srt trigger
-        
-        */
 
-    }, [])
+        fetchData(); // triggers the API call
+    }, [fetchData]);
 
-    const [jsonData, setJsonData] = useState<string>("")
+
     const [url, setUrl] = useState<string>("")
     const eventSrcRef = useRef<EventSource | null>(null)
-    const API = "http://localhost:5000"
 
     if (!trigger || !trigger.app) return null
     const { app, config, id, type } = trigger
     const { options, selectedOption } = app
+
     return (
         <div>
 
@@ -31,32 +33,64 @@ export default function Webhook() {
                 <label className="block text-sm font-medium mb-2">
                     {trigger.type === 'trigger' ? 'Trigger event' : 'Action event'} <span className="text-red-500">*</span>
                 </label>
-                <select className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring mb-4">
+                <select className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring mb-4" value={selectedOption} onChange={(e) => {
+                    // @ts-ignore
+                    setTrigger(trigger => ({
+                        ...trigger,
+
+                        app: {
+                            ...trigger?.app,
+                            selectedOption: e.target.value
+                        }
+                    }))
+
+
+                }}>
                     <option value="">Choose an event</option>
-                    {type === 'trigger' ? (
+                    {
                         options?.map(option => <option value={option.name}>{option.name}</option>)
 
-                    ) : (
-                        <>``
-                            <option value="create-file">Create File</option>
-                            <option value="upload-file">Upload File</option>
-                            <option value="create-folder">Create Folder</option>
-                        </>
-                    )}
+
+                    }
                 </select>
             </div>
 
             <div>
-                {selectedOption && <Button className="w-full" size="lg" disabled={!!url} style={{ pointerEvents: url ? "none" : "auto" }} onClick={() => {
+                {selectedOption && <Button className="w-full" size="lg" disabled={!!webhookUrl} style={{ pointerEvents: webhookUrl ? "none" : "auto" }} onClick={() => {
                     const id = crypto.randomUUID().slice(0, 12)
                     const urlHook = `${API}/api/v1/hook/${id}`
-                    setUrl(urlHook)
+                    //setUrl(urlHook)
+                    // @ts-ignore
+                    setTrigger(trigger => ({
+                        ...trigger,
+                        id: app.id,
+                        app: {
+                            ...trigger?.app,
+                            metaData: {
+                                webhookUrl: urlHook
+                            }
+                        }
+                    }))
                     const eventSource = new EventSource(urlHook);
                     eventSrcRef.current = eventSource
 
+
                     eventSource.onmessage = (event) => {
                         const data = JSON.parse(event.data);
-                        setJsonData(data) // update global state
+                        //setJsonData(data) // update global state
+                        // @ts-ignore
+
+                        setTrigger(trigger => ({
+                            ...trigger,
+                            id: app.id,
+                            app: {
+                                ...trigger?.app,
+                                metaData: {
+                                    ...trigger?.app?.metaData,
+                                    jsonData: data
+                                }
+                            }
+                        }))
                         console.log("Received:", data);
                     };
 
@@ -65,11 +99,11 @@ export default function Webhook() {
                 </Button>
                 }
                 <hr />
-                {url && <><div className="flex ustify-content-between">
-                    <p className="my-4 border border-black-500 p-1 rounded w-100 text-sm">{url}</p>
+                {webhookUrl && <><div className="flex ustify-content-between">
+                    <p className="my-4 border border-black-500 p-1 rounded w-100 text-sm">{webhookUrl}</p>
                     <CopyIcon className="mt-6 ml-2 cursor-pointer" onClick={() => {
 
-                        navigator.clipboard.writeText(url)
+                        navigator.clipboard.writeText(webhookUrl)
                             .then(() => {
                                 alert("Copied to clipboard!");
                             })

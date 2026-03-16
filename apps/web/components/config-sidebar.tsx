@@ -1,16 +1,14 @@
 "use client"
 
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
-import { Input } from "@/components/ui/input"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { ZapNode } from "@/lib/types"
-import { AudioWaveform, ChevronRight, CopyIcon, MoveRight, Sidebar, WatchIcon, Webhook } from "lucide-react"
 import Image from "next/image"
-import { useEffect, useRef, useState } from "react"
-import axios from "axios"
-import { ref } from "process"
+import { useRef } from "react"
+
 import Triggers from "./triggers/Triggers"
 import Actions from "./triggers/actions/Actions"
+import { ChevronRight } from "lucide-react"
 
 interface ConfigSidebarProps {
   open: boolean
@@ -33,20 +31,12 @@ export function ConfigSidebar({ open, onOpenChange, node, onSave, onConfigure }:
     }
     onOpenChange(false)
   }
-  const [option, setOptions] = useState<null | [{ name: string }]>(null)
-  const [url, setUrl] = useState<string>("")
-  const [data, setData] = useState<string>("")
+
+
   const eventSrcRef = useRef<EventSource | null>(null)
 
 
-  const API = "http://localhost:5000"
-
-  useEffect(() => {
-    axios.get<[{ name: string }]>(`${API}/api/v1/triggers/options/1`).then(res => {
-      setOptions(res.data)
-    })
-  }, [])
-
+  console.log(node.type)
   if (!node?.app) return null
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -93,7 +83,7 @@ export function ConfigSidebar({ open, onOpenChange, node, onSave, onConfigure }:
           </div>
 
 
-          {node.type === "trigger" ? <Triggers /> : <Actions />}
+          {node.type === "trigger" ? <Triggers /> : <Actions nodeId={node.id} />}
         </div>
         <div className=" bottom-0 left-0 right-0 p-6 border-t bg-white">
           <Button onClick={handleSave} className="w-full mt-4" size="lg">

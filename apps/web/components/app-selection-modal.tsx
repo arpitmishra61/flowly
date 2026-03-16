@@ -7,24 +7,30 @@ import { Action, App, Trigger } from "@/lib/types"
 import { useEffect, useState } from "react"
 import axios from "axios"
 import Image from "next/image"
+import { useAtom } from "jotai"
+import { TriggerAtom } from "@/atoms"
 
 const API = "http://localhost:5000"
 interface AppSelectionModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSelectApp: (app: App) => void
-  title?: string
+  title?: string,
+  modalType: "trigger" | "action"
 }
 
 export function AppSelectionModal({
   open,
   onOpenChange,
   onSelectApp,
-  title = "Choose an app"
+  title = "Choose an app",
+  modalType
 }: AppSelectionModalProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [actions, setActions] = useState<Action[] | null>(null)
   const [triggers, setTriggers] = useState<Trigger[] | null>(null)
+  const [selectedTrigger, setSelectedTrigger] = useAtom(TriggerAtom);
+
   useEffect(() => {
     Promise.all([axios.get<Trigger[]>(`${API}/api/v1/triggers`), axios.get<Action[]>(`${API}/api/v1/actions`)]).then(([triggersRes, actionsRes]) => {
 
@@ -36,15 +42,32 @@ export function AppSelectionModal({
 
   }, [])
 
-  const filteredApps = triggers ? triggers.filter(app =>
+  const appsToShow = modalType === "trigger" ? triggers : actions
+  const filteredApps = appsToShow?.filter(app =>
     app.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ) : []
+  ) || []
 
   const handleSelectApp = (app: App) => {
     console.log(app)
     onSelectApp(app)
     onOpenChange(false)
     setSearchQuery("")
+    const { id, name, imageUrl } = app
+
+
+    // it should be trigger selection
+    if (app.name === "Webhook") {
+      // @ts-ignore
+      setSelectedTrigger(trigger => ({
+        ...trigger,
+        id: app.id,
+        app: {
+          id, name, imageUrl
+        }
+      }))
+
+    }
+
   }
 
   return (

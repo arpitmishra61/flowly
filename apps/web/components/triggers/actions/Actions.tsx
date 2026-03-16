@@ -1,6 +1,7 @@
 import React from 'react'
 
-export default function Actions({ nodeId: string }) {
+export default function Actions({ nodeId }: { nodeId: string }) {
+    console.log("ndeoid", nodeId)
     return (
         <div>{
 

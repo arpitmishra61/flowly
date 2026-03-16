@@ -55,6 +55,7 @@ export function ZapBuilder() {
     ))
 
     // After selecting app, open sidebar for configuration
+    console.log("app", app)
     setSidebarOpen(true)
   }
 
@@ -76,13 +77,13 @@ export function ZapBuilder() {
       configured: false
     }
     const previousNode = nodes.at(-1)
-    console.log(previousNode)
+
     if (previousNode?.configured === true) {
       setNodes([...nodes, newNode])
     }
   }
   const previousNode = nodes.at(-1)
-  console.log(previousNode)
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
       {/* Header */}
@@ -161,6 +162,7 @@ export function ZapBuilder() {
         onOpenChange={setModalOpen}
         onSelectApp={handleSelectApp}
         title={modalType === 'trigger' ? 'Choose a trigger app' : 'Choose an action app'}
+        modalType={modalType}
       />
 
       {sidebarOpen && <ConfigSidebar
