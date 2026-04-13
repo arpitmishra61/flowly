@@ -1,9 +1,14 @@
+import { ActionsAtom } from '@/atoms';
+import { useAtom } from 'jotai';
 import React from 'react'
+import GmailAction from './GmailAction';
 
 export default function Actions({ nodeId }: { nodeId: string }) {
-    console.log("ndeoid", nodeId)
+
+
     return (
         <div>{
+            <GmailAction nodeId={nodeId} />
 
             /*
             which action 

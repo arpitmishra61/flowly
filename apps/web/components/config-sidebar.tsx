@@ -36,7 +36,7 @@ export function ConfigSidebar({ open, onOpenChange, node, onSave, onConfigure }:
   const eventSrcRef = useRef<EventSource | null>(null)
 
 
-  console.log(node.type)
+  console.log(node.id)
   if (!node?.app) return null
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

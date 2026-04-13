@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 import axios from "axios"
 import Image from "next/image"
 import { useAtom } from "jotai"
-import { TriggerAtom } from "@/atoms"
+import { ActionsAtom, TriggerAtom } from "@/atoms"
 
 const API = "http://localhost:5000"
 interface AppSelectionModalProps {
@@ -16,7 +16,8 @@ interface AppSelectionModalProps {
   onOpenChange: (open: boolean) => void
   onSelectApp: (app: App) => void
   title?: string,
-  modalType: "trigger" | "action"
+  modalType: "trigger" | "action",
+  actionId: string | null
 }
 
 export function AppSelectionModal({
@@ -24,12 +25,14 @@ export function AppSelectionModal({
   onOpenChange,
   onSelectApp,
   title = "Choose an app",
-  modalType
+  modalType,
+  actionId
 }: AppSelectionModalProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [actions, setActions] = useState<Action[] | null>(null)
   const [triggers, setTriggers] = useState<Trigger[] | null>(null)
   const [selectedTrigger, setSelectedTrigger] = useAtom(TriggerAtom);
+  const [selectedActions, setSelectedActions] = useAtom(ActionsAtom);
 
   useEffect(() => {
     Promise.all([axios.get<Trigger[]>(`${API}/api/v1/triggers`), axios.get<Action[]>(`${API}/api/v1/actions`)]).then(([triggersRes, actionsRes]) => {
@@ -47,7 +50,7 @@ export function AppSelectionModal({
     app.name.toLowerCase().includes(searchQuery.toLowerCase())
   ) || []
 
-  const handleSelectApp = (app: App) => {
+  const handleSelectApp = async (app: App) => {
     console.log(app)
     onSelectApp(app)
     onOpenChange(false)
@@ -56,15 +59,49 @@ export function AppSelectionModal({
 
 
     // it should be trigger selection
-    if (app.name === "Webhook") {
+    if (name === "Webhook") {
       // @ts-ignore
       setSelectedTrigger(trigger => ({
         ...trigger,
-        id: app.id,
+        id,
         app: {
           id, name, imageUrl
         }
       }))
+
+    }
+    else {
+      const action = selectedActions?.find(action => action?.app?.id === id)
+      if (!action) {
+        //network call
+        const res = await axios.get<{ name: string }[]>(
+          `${API}/api/v1/actions/options/${id}`,
+        );
+        console.log("the c cid", id)
+        const options = res.data
+        console.log("this action id", actionId)
+        setSelectedActions(actions => {
+          const newAction = {
+            id: actionId,
+            app: {
+              id, name, imageUrl, options
+            }
+          }
+          return [...(actions ?? []), newAction]
+
+        })
+      } else {
+        setSelectedActions(actions => {
+
+          const newAction = {
+            id: actionId,
+            app: action.app
+          }
+          return [...(actions ?? []), newAction]
+
+        })
+
+      }
 
     }
 

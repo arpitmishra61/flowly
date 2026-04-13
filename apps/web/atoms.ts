@@ -1,8 +1,10 @@
 import axios from "axios";
-import { App, TriggerNode } from "./lib/types";
+import { App, TriggerNode, ActionNode } from "./lib/types";
 import { atom } from "jotai";
 
 export const TriggerAtom = atom<Partial<TriggerNode | null>>(null);
+export const ActionsAtom = atom<Partial<ActionNode[] | null>>(null);
+
 const API = "http://localhost:5000";
 
 export const fetchTriggerData = atom(null, async (get, set) => {

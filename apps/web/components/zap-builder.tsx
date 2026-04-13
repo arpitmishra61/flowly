@@ -161,6 +161,7 @@ export function ZapBuilder() {
         open={modalOpen}
         onOpenChange={setModalOpen}
         onSelectApp={handleSelectApp}
+        actionId={modalType === "action" ? currentNodeId : null}
         title={modalType === 'trigger' ? 'Choose a trigger app' : 'Choose an action app'}
         modalType={modalType}
       />
