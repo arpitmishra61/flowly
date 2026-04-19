@@ -4,6 +4,9 @@ import { atom } from "jotai";
 
 export const TriggerAtom = atom<Partial<TriggerNode | null>>(null);
 export const ActionsAtom = atom<Partial<ActionNode[] | null>>(null);
+export const MetaDataAtom = atom<Record<string, string> | null>(null);
+export const SaveNodeAction = atom<any>(null);
+export const PublishModalOpenAtom = atom<boolean>(false);
 
 const API = "http://localhost:5000";
 

@@ -1,13 +1,18 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { Plus } from "lucide-react"
 import { ZapNode } from "@/components/zap-node"
 import { AppSelectionModal } from "@/components/app-selection-modal"
 import { ConfigSidebar } from "@/components/config-sidebar"
 import { Button } from "@/components/ui/button"
 import { ZapNode as ZapNodeType, App } from "@/lib/types"
-import { config } from "process"
+import { ActionsAtom, MetaDataAtom, PublishModalOpenAtom, SaveNodeAction, TriggerAtom } from "@/atoms"
+import { getDefaultStore, useAtom, useAtomValue, useSetAtom } from "jotai"
+
+import axios from "axios"
+import { PublishModal } from "./PublishModal"
+
 
 export function ZapBuilder() {
   const [nodes, setNodes] = useState<ZapNodeType[]>([
@@ -18,14 +23,19 @@ export function ZapBuilder() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarConfig, setSidebarConfig] = useState<[{ type: string, id: string, data: any }] | null>(null)
   const sidebarData = useRef<{ type: string, id: string, data: any } | null>(null)
+  const setMetaData = useSetAtom(MetaDataAtom)
+  const [publishModalOpen, setPublishModalOpen] = useAtom(PublishModalOpenAtom)
 
   const [currentNodeId, setCurrentNodeId] = useState<string | null>(null)
   const [modalType, setModalType] = useState<'trigger' | 'action'>('trigger')
+  const triggerData = useAtomValue(TriggerAtom)
+  const actionData = useAtomValue(ActionsAtom)
 
   const currentNode = nodes.find(n => n.id === currentNodeId) || null
 
   const handleNodeClick = (nodeId: string, changeReq?: Boolean) => {
     const node = nodes.find(n => n.id === nodeId)
+    console.log("dadad", node)
     if (!node) return
 
     setCurrentNodeId(nodeId)
@@ -59,15 +69,28 @@ export function ZapBuilder() {
     setSidebarOpen(true)
   }
 
-  const handleSaveConfig = (config: Record<string, any>) => {
+  const handleSaveConfig = useCallback((config: Record<string, any>) => {
+
     if (!currentNodeId) return
 
-    setNodes(nodes.map(node =>
+    setNodes(nodes => nodes.map(node =>
       node.id === currentNodeId
         ? { ...node, configured: true, config }
         : node
     ))
-  }
+    if (!actionData?.length) {
+      console.log(triggerData)
+      const jsonData = triggerData?.app?.metaData.jsonData
+      setMetaData(metaData => ({ ...metaData, ...jsonData }))
+
+    }
+    else {
+      const jsonData = actionData?.[-1]?.app?.metaData?.jsonData
+      setMetaData(metaData => ({ ...metaData, ...jsonData }))
+    }
+
+  }, [currentNodeId, actionData, triggerData?.app])
+
 
   const handleAddAction = () => {
     const newNode: ZapNodeType = {
@@ -83,6 +106,7 @@ export function ZapBuilder() {
     }
   }
   const previousNode = nodes.at(-1)
+  console.log("rer", currentNodeId)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
@@ -97,7 +121,33 @@ export function ZapBuilder() {
           </div>
           <div className="flex items-center gap-3">
             <Button variant="outline">Test run</Button>
-            <Button>Publish</Button>
+            <Button onClick={() => {
+              let url = "http://localhost:5000/api/v1/zap"
+              console.log(triggerData, actionData)
+              const data = {
+                availableTriggerId: `${triggerData?.id}`,
+                triggerMetadata: triggerData?.app?.metaData.jsonData,
+                actions: actionData?.map(action => {
+                  return {
+                    availableActionId: action?.app?.id.toString(),
+                    actionMetadata: action?.app?.metaData.jsonData
+                  }
+                })
+              };
+              console.log("data to send ", data)
+
+              axios.post(url, data, {
+              })
+                .then(response => {
+                  console.log("Success:", response.data);
+                })
+                .catch(error => {
+                  console.error("Error:", error);
+                });
+
+              setPublishModalOpen(true)
+
+            }}>Publish</Button>
           </div>
         </div>
       </header>
@@ -175,6 +225,10 @@ export function ZapBuilder() {
         setSidebarConfig={setSidebarConfig}
         onConfigure={() => handleNodeClick(currentNodeId ?? "", true)}
       />}
+      <PublishModal
+        open={publishModalOpen}
+        onOpenChange={setPublishModalOpen}
+      />
     </div>
   )
 }

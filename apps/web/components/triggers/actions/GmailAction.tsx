@@ -1,32 +1,27 @@
-import React, { useEffect, useRef, useState } from 'react'
-
-import { AudioWaveform, CopyIcon, MoveRight, WebhookIcon } from 'lucide-react'
-import { useAtom } from 'jotai'
-import { ActionsAtom, fetchTriggerData, TriggerAtom } from '@/atoms'
-import { Button } from '@repo/ui/button';
+import React, { useRef, useState } from 'react'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { ActionsAtom, PublishModalOpenAtom, SaveNodeAction } from '@/atoms'
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-
-
+import AutocompleteBox from '@/components/AutocompleteBox';
+import { Button } from '@/components/ui/button';
 
 export default function GmailAction({ nodeId }: { nodeId: string }) {
-    const [actions, setActions] = useAtom(ActionsAtom);
 
+    const [actions, setActions] = useAtom(ActionsAtom);
+    const formRef = useRef(null)
     const currentAction = actions?.find(action => action?.id === nodeId)
-    console.log(currentAction)
+    const saveNodeAction = useAtomValue(SaveNodeAction)
+
+
 
     const API = "http://localhost:5000";
-
-
-
-
-    const [url, setUrl] = useState<string>("")
-    const eventSrcRef = useRef<EventSource | null>(null)
+    console.log("actions", actions)
 
     if (!currentAction || !currentAction.app) return null
     const { app, config, id, type } = currentAction
-    const { options, selectedOption } = app
+    const { options, selectedOption, metaData } = app
+    const data = metaData?.jsonData || {}
+
     // @ts-ignore
     return (
         <div>
@@ -70,45 +65,92 @@ export default function GmailAction({ nodeId }: { nodeId: string }) {
                 {selectedOption === "send mail" && <div>
 
 
-                    <div className="max-w-3xl mx-auto ">
+                    <form className="max-w-3xl mx-auto " ref={formRef}>
                         <Card className="shadow-sm border">
 
                             <CardHeader className="space-y-1">
                                 {/* Subject */}
-                                <Input
+                                <AutocompleteBox
                                     placeholder="Subject"
-                                    className="text-xl font-semibold border-none focus-visible:ring-0 px-0"
+                                    type='input'
+                                    name="subject"
+                                    currentValue={data.subject}
+
                                 />
 
                                 {/* Sender */}
-                                <Input
+                                <AutocompleteBox
                                     placeholder="From"
-                                    className="text-sm text-gray-600 border-none focus-visible:ring-0 px-0"
+                                    type='input'
+                                    name="from"
+                                    currentValue={data.from}
+
+
                                 />
 
-                                <Input
+
+                                <AutocompleteBox
                                     placeholder="To"
-                                    className="text-sm text-gray-600 border-none focus-visible:ring-0 px-0"
+                                    type='input'
+                                    name="to"
+                                    currentValue={data.to}
+
                                 />
                             </CardHeader>
                             <hr />
                             <CardContent>
                                 {/* Email Body */}
-                                <Textarea
-                                    placeholder="Write your message..."
-                                    className="min-h-[200px] resize-none border-none focus-visible:ring-0 px-0 text-gray-700"
+                                <AutocompleteBox
+                                    placeholder="Write your mail..."
+                                    type='textarea'
+                                    name="body"
+                                    currentValue={data.body}
+
                                 />
                             </CardContent>
 
                         </Card>
 
-                    </div>
+                    </form>
 
 
                 </div>
                 }
 
             </div>
+            <Button onClick={() => {
+                console.log(formRef.current)
+                const formData = new FormData(formRef?.current as any)
+                const data = Object.fromEntries(formData.entries());
+                console.log(data)
+                setActions(actions => {
+                    if (actions?.length) {
+                        const dummyActions = [...actions]
+
+                        const updatedActions = dummyActions.map(action => action?.id === nodeId ? {
+                            ...action, app: {
+                                ...action.app,
+                                metaData: {
+                                    ...action.app?.metaData,
+                                    jsonData: data
+                                }
+                            }
+                        } : action)
+
+                        return updatedActions
+
+                    }
+
+
+                })
+
+                setTimeout(() => {
+                    saveNodeAction()
+                }, 1000)
+
+            }} className="w-full mt-4" size="lg">
+                Finish
+            </Button>
         </div>
     )
 }

@@ -4,11 +4,14 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button"
 import { ZapNode } from "@/lib/types"
 import Image from "next/image"
-import { useRef } from "react"
+import { useCallback, useEffect, useRef } from "react"
 
 import Triggers from "./triggers/Triggers"
 import Actions from "./triggers/actions/Actions"
 import { ChevronRight } from "lucide-react"
+import { useAtom, useSetAtom } from "jotai"
+import { SaveNodeAction } from "@/atoms"
+
 
 interface ConfigSidebarProps {
   open: boolean
@@ -21,23 +24,30 @@ interface ConfigSidebarProps {
 }
 
 export function ConfigSidebar({ open, onOpenChange, node, onSave, onConfigure }: ConfigSidebarProps) {
-  const handleSave = () => {
+  const handleSave = useCallback((metaData: any) => {
+    console.log("hepening")
+    console.log("ondave", onSave)
     onSave({
-      event: node?.type === 'trigger' ? 'New File' : 'Create File',
-      configured: true
+      event: node?.type,
+      configured: true,
+      metaData
     })
-    if (eventSrcRef.current) {
-      eventSrcRef.current.close()
-    }
     onOpenChange(false)
-  }
+
+  }, [onSave, onOpenChange])
 
 
-  const eventSrcRef = useRef<EventSource | null>(null)
 
+  const [saveNodeAction, setSaveNodeAction] = useAtom(SaveNodeAction)
 
-  console.log(node.id)
-  if (!node?.app) return null
+  console.log(saveNodeAction)
+  useEffect(() => {
+
+    setSaveNodeAction(() => handleSave)
+
+  }, [handleSave])
+
+  if (!node?.app) return "hello"
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent onClose={() => onOpenChange(false)} side="right">
@@ -86,9 +96,7 @@ export function ConfigSidebar({ open, onOpenChange, node, onSave, onConfigure }:
           {node.type === "trigger" ? <Triggers /> : <Actions nodeId={node.id} />}
         </div>
         <div className=" bottom-0 left-0 right-0 p-6 border-t bg-white">
-          <Button onClick={handleSave} className="w-full mt-4" size="lg">
-            Finish
-          </Button>
+
         </div>
       </SheetContent>
     </Sheet >

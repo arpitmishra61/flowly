@@ -23,11 +23,11 @@ export type Action = Record<"id" | "name" | "imageUrl", string> & {
 type TriggerMetaData = webhookTriggerMetaData | gmailTriggerMetaData;
 type webhookTriggerMetaData = {
   webhookUrl: string;
-  jsonData: any;
+  jsonData: Record<string, string>;
 };
 type gmailTriggerMetaData = {
   triggerType: "";
-  mailData: "";
+  jsonData: Record<string, string>;
 };
 export type Trigger = Action;
 

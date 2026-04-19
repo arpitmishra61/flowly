@@ -95,7 +95,9 @@ export function AppSelectionModal({
 
           const newAction = {
             id: actionId,
-            app: action.app
+            app: {
+              id, name, imageUrl, options: action?.app?.options
+            }
           }
           return [...(actions ?? []), newAction]
 
