@@ -1,0 +1,15 @@
+{
+  "name": "sweeper",
+  "version": "1.0.0",
+  "description": "A server which produce things to kafka ",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx sweeper.ts"
+  },
+  "dependencies": {
+    "@repo/kafka": "workspace:*",
+    "@repo/db": "workspace:*"
+  },
+  "author": "Arpit",
+  "license": "MIT"
+}

@@ -1,20 +1,44 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Plus, Search, Filter } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ZapCard } from "@/components/zap-card"
-import { MOCK_ZAPS, Zap } from "@/lib/mock-data"
 import Link from "next/link"
+import axios from "axios"
+type TriggerInfo = {
+    name: string;
+    imageUrl: string;
+};
 
+type ActionInfo = {
+    name: string;
+    imageUrl: string;
+};
+
+export type Zap = {
+    id: string;
+    trigger: TriggerInfo | null;
+    actions: ActionInfo[];
+};
+
+type ZapResponse = Zap[];
 export default function Dashboard() {
     const [activeTab, setActiveTab] = useState<'all' | 'running'>('all')
     const [searchQuery, setSearchQuery] = useState('')
-    const [zaps, setZaps] = useState<Zap[]>(MOCK_ZAPS)
+    const [zaps, setZaps] = useState<ZapResponse>([])
 
-    const filteredZaps = zaps.filter(zap => {
+    useEffect(() => {
+        axios.get("http://localhost:5000/api/v1/zap/1").then(res => {
+            setZaps(res.data)
+        }).catch(err => {
+            console.log("error fetching zaps")
+        })
+    }, [])
+
+    const filteredZaps = zaps || zaps.filter(zap => {
         const matchesSearch = zap.name.toLowerCase().includes(searchQuery.toLowerCase())
         const matchesTab = activeTab === 'all' || (activeTab === 'running' && zap.status === 'active')
         return matchesSearch && matchesTab
@@ -34,6 +58,9 @@ export default function Dashboard() {
         if (confirm('Are you sure you want to delete this Zap?')) {
             setZaps(zaps.filter(zap => zap.id !== id))
         }
+    }
+    if (!zaps.length) {
+        return <h3>No Zaps</h3>
     }
 
     return (
@@ -131,30 +158,6 @@ export default function Dashboard() {
                                 </Button>
                             </Link>
                         )}
-                    </div>
-                )}
-
-                {/* Stats Summary */}
-                {filteredZaps.length > 0 && (
-                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="bg-white rounded-xl p-6 border-2 border-gray-200">
-                            <div className="text-sm text-muted-foreground mb-1">Total Zaps</div>
-                            <div className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                                {zaps.length}
-                            </div>
-                        </div>
-                        <div className="bg-white rounded-xl p-6 border-2 border-gray-200">
-                            <div className="text-sm text-muted-foreground mb-1">Active Zaps</div>
-                            <div className="text-3xl font-bold text-green-600">
-                                {runningCount}
-                            </div>
-                        </div>
-                        <div className="bg-white rounded-xl p-6 border-2 border-gray-200">
-                            <div className="text-sm text-muted-foreground mb-1">Total Runs</div>
-                            <div className="text-3xl font-bold text-blue-600">
-                                {zaps.reduce((sum, zap) => sum + zap.totalRuns, 0).toLocaleString()}
-                            </div>
-                        </div>
                     </div>
                 )}
             </div>

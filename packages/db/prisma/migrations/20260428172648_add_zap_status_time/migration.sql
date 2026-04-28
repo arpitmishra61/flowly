@@ -1,0 +1,10 @@
+-- CreateEnum
+CREATE TYPE "ZapStatus" AS ENUM ('RUNNING', 'PENDING', 'COMPLETE');
+
+-- AlterTable
+ALTER TABLE "Zap" ADD COLUMN     "name" TEXT NOT NULL DEFAULT 'New Zap';
+
+-- AlterTable
+ALTER TABLE "ZapRun" ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "finishedAt" TIMESTAMP(3),
+ADD COLUMN     "status" "ZapStatus" NOT NULL DEFAULT 'PENDING';

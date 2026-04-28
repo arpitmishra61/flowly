@@ -1,10 +1,12 @@
 "use client"
 
 import { MoreVertical, Play, Pause, Trash2, ExternalLink, ChevronRight } from "lucide-react"
-import { Zap } from "@/lib/mock-data"
+
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
+import { Zap } from "@/app/page"
+import Image from "next/image"
 
 interface ZapCardProps {
     zap: Zap
@@ -105,9 +107,10 @@ export function ZapCard({ zap, onToggle, onDelete }: ZapCardProps) {
                 {/* Trigger */}
                 <div
                     className="w-10 h-10 rounded-lg flex items-center justify-center text-lg shadow-sm flex-shrink-0"
-                    style={{ backgroundColor: `${zap.triggerApp.color}15` }}
+
                 >
-                    {zap.triggerApp.icon}
+                    <Image src={zap.trigger?.imageUrl || ''} height={50} width={50} alt="logo" />
+
                 </div>
 
                 <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
@@ -118,9 +121,9 @@ export function ZapCard({ zap, onToggle, onDelete }: ZapCardProps) {
                         <div key={index} className="flex items-center gap-2 flex-shrink-0">
                             <div
                                 className="w-10 h-10 rounded-lg flex items-center justify-center text-lg shadow-sm"
-                                style={{ backgroundColor: `${action.color}15` }}
+
                             >
-                                {action.icon}
+                                <Image src={action?.imageUrl || ''} height={50} width={50} alt="logo" />
                             </div>
                             {index < zap.actions.length - 1 && (
                                 <ChevronRight className="h-4 w-4 text-gray-400" />
@@ -130,28 +133,6 @@ export function ZapCard({ zap, onToggle, onDelete }: ZapCardProps) {
                 </div>
             </div>
 
-            {/* Stats */}
-            <div className="flex items-center justify-between pt-4 border-t">
-                <div className="flex items-center gap-4 text-sm">
-                    <div>
-                        <span className="text-muted-foreground">Total runs:</span>
-                        <span className="font-semibold ml-1">{zap.totalRuns.toLocaleString()}</span>
-                    </div>
-                    {zap.lastRun && (
-                        <div>
-                            <span className="text-muted-foreground">Last run:</span>
-                            <span className="font-semibold ml-1">{zap.lastRun}</span>
-                        </div>
-                    )}
-                </div>
-
-                {zap.status === 'active' && (
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        <span className="text-xs font-medium text-green-600">Running</span>
-                    </div>
-                )}
-            </div>
         </div>
     )
 }
