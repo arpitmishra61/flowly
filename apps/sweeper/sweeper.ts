@@ -9,7 +9,9 @@ async function main() {
 
   while (1) {
     const pendingRows = await db.zapRun.findMany({
-      where: {},
+      where: {
+        status: "PENDING",
+      },
       take: 10,
     });
     console.log(pendingRows);
@@ -18,7 +20,7 @@ async function main() {
       topic: TOPIC_NAME,
       messages: pendingRows.map((r) => {
         return {
-          value: JSON.stringify({ zapRunId: r.zapId, stage: 0 }),
+          value: JSON.stringify({ zapRunId: r.id, stage: 0 }),
         };
       }),
     });

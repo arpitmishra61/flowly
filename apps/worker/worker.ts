@@ -3,59 +3,61 @@ import getKafka from "@repo/kafka/client";
 
 async function main() {
   const kafka = getKafka();
-  while (true) {
-    const consumer = kafka.consumer({ groupId: "main-worker-2" });
-    await consumer.connect();
-    const producer = kafka.producer();
-    await producer.connect();
-    const TOPIC_NAME = "zap-events";
+  const consumer = kafka.consumer({ groupId: "main-worker-2" });
+  await consumer.connect();
+  const producer = kafka.producer();
+  await producer.connect();
+  const TOPIC_NAME = "zap-events";
 
-    await consumer.subscribe({ topic: TOPIC_NAME, fromBeginning: true });
+  await consumer.subscribe({ topic: TOPIC_NAME, fromBeginning: true });
 
-    await consumer.run({
-      autoCommit: false,
-      eachMessage: async ({ topic, partition, message }) => {
-        console.log({
-          partition,
-          offset: message.offset,
-          value: message.value?.toString(),
-        });
-        if (!message.value?.toString()) {
-          return;
-        }
+  await consumer.run({
+    autoCommit: false,
+    eachMessage: async ({ topic, partition, message }) => {
+      console.log({
+        partition,
+        offset: message.offset,
+        value: message.value?.toString(),
+      });
+      if (!message.value?.toString()) {
+        return;
+      }
 
-        const parsedValue = JSON.parse(message.value?.toString());
-        const zapRunId = parsedValue.zapRunId;
-        const stage = parsedValue.stage;
+      const parsedValue = JSON.parse(message.value?.toString());
+      const zapRunId = parsedValue.id;
+      const stage = parsedValue.stage;
 
-        const zapRunDetails = await db.zapRun.findFirst({
-          where: {
-            id: zapRunId,
-          },
-          include: {
-            zap: {
-              include: {
-                actions: {
-                  include: {
-                    type: true,
-                  },
+      const zapRunDetails = await db.zapRun.findFirst({
+        where: {
+          id: zapRunId,
+        },
+        include: {
+          zap: {
+            include: {
+              actions: {
+                include: {
+                  type: true,
                 },
               },
             },
           },
-        });
-        const currentAction = zapRunDetails?.zap.actions.find(
-          (x) => x.sortingOrder === stage,
-        );
+        },
+      });
+      const currentAction = zapRunDetails?.zap.actions.find(
+        (x) => x.sortingOrder === stage,
+      );
 
-        if (!currentAction) {
-          console.log("Current action not found?");
-          return;
-        }
+      if (!currentAction) {
+        console.log("Current action not found?");
+        return;
+      } else {
+        console.log("current action ", currentAction);
+      }
 
-        // const zapRunMetadata = zapRunDetails?.metadata;
+      const zapRunMetadata = currentAction.metadata;
 
-        // if (currentAction.type.id === "email") {
+      if (currentAction.type.name === "Gmail") {
+        console.log("Sending mail");
         //   const body = parse(
         //     (currentAction.metadata as JsonObject)?.body as string,
         //     zapRunMetadata,
@@ -100,18 +102,19 @@ async function main() {
         //       },
         //     ],
         //   });
-        // }
+      }
 
-        // console.log("processing done");
-        // //
-        // await consumer.commitOffsets([
-        //   {
-        //     topic: TOPIC_NAME,
-        //     partition: partition,
-        //     offset: (parseInt(message.offset) + 1).toString(), // 5
-        //   },
-        // ]);
-      },
-    });
-  }
+      // console.log("processing done");
+      // //
+      // await consumer.commitOffsets([
+      //   {
+      //     topic: TOPIC_NAME,
+      //     partition: partition,
+      //     offset: (parseInt(message.offset) + 1).toString(), // 5
+      //   },
+      // ]);
+    },
+  });
 }
+
+main();
