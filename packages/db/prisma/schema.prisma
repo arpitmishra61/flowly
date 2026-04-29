@@ -88,6 +88,7 @@ model ZapRun {
   id           Int           @id @default(autoincrement())
   zapId        String
   zap          Zap           @relation(fields: [zapId], references: [id])
+  metadata     Json          @default("{}")
   zapRunOutbox ZapRunOutbox?
   status       ZapStatus     @default(PENDING)
   createdAt    DateTime      @default(now())

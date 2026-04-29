@@ -1,20 +1,19 @@
 {
-  "name": "worker",
+  "name": "hook",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx worker.ts"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "@repo/db": "workspace:*",
-    "@repo/kafka": "workspace:*",
-    "nodemailer": "^8.0.7"
+    "express": "^5.2.1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/nodemailer": "^8.0.0"
+    "@types/express": "^5.0.6"
   }
 }

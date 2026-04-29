@@ -1,5 +1,7 @@
 import db from "@repo/db/client";
 import getKafka from "@repo/kafka/client";
+import parse from "./helper/parser";
+import sendMail from "./helper/actions/sendMail";
 
 async function main() {
   const kafka = getKafka();
@@ -54,65 +56,76 @@ async function main() {
         console.log("current action ", currentAction);
       }
 
-      const zapRunMetadata = currentAction.metadata;
+      const zapRunMetadata = zapRunDetails?.metadata;
+      const actionName = currentAction.type.name;
+      const { body, to, subject } = currentAction.metadata as any;
 
-      if (currentAction.type.name === "Gmail") {
+      if (actionName === "Gmail") {
         console.log("Sending mail");
-        //   const body = parse(
-        //     (currentAction.metadata as JsonObject)?.body as string,
-        //     zapRunMetadata,
-        //   );
-        //   const to = parse(
-        //     (currentAction.metadata as JsonObject)?.email as string,
-        //     zapRunMetadata,
-        //   );
-        //   console.log(`Sending out email to ${to} body is ${body}`);
-        //   await sendEmail(to, body);
-        // }
+        const bodyData = parse(body, zapRunMetadata);
+        const subjectData = parse(subject, zapRunMetadata);
+        const reciever = parse(to, zapRunMetadata);
 
-        // if (currentAction.type.id === "send-sol") {
-        //   const amount = parse(
-        //     (currentAction.metadata as JsonObject)?.amount as string,
-        //     zapRunMetadata,
-        //   );
-        //   const address = parse(
-        //     (currentAction.metadata as JsonObject)?.address as string,
-        //     zapRunMetadata,
-        //   );
-        //   console.log(`Sending out SOL of ${amount} to address ${address}`);
-        //   await sendSol(address, amount);
-        // }
-
-        // //
-        // await new Promise((r) => setTimeout(r, 500));
-
-        // const lastStage = (zapRunDetails?.zap.actions?.length || 1) - 1; // 1
-        // console.log(lastStage);
-        // console.log(stage);
-        // if (lastStage !== stage) {
-        //   console.log("pushing back to the queue");
-        //   await producer.send({
-        //     topic: TOPIC_NAME,
-        //     messages: [
-        //       {
-        //         value: JSON.stringify({
-        //           stage: stage + 1,
-        //           zapRunId,
-        //         }),
-        //       },
-        //     ],
-        //   });
+        const success = await sendMail({
+          from: "arpitmishra61@gmail.com",
+          to: reciever,
+          subject: subjectData,
+          body: bodyData,
+        });
+        if (success) {
+          console.log("Email Sent");
+        } else {
+          console.log("Email Not Sent");
+        }
       }
 
-      // console.log("processing done");
-      // //
-      // await consumer.commitOffsets([
-      //   {
-      //     topic: TOPIC_NAME,
-      //     partition: partition,
-      //     offset: (parseInt(message.offset) + 1).toString(), // 5
-      //   },
-      // ]);
+      await new Promise((r) => setTimeout(r, 500));
+
+      const lastStage = (zapRunDetails?.zap.actions?.length || 1) - 1; // 1
+      console.log(lastStage);
+      console.log(stage);
+      if (lastStage !== stage) {
+        console.log("pushing back to the queue");
+        await producer.send({
+          topic: TOPIC_NAME,
+          messages: [
+            {
+              value: JSON.stringify({
+                stage: stage + 1,
+                zapRunId,
+              }),
+            },
+          ],
+        });
+      } else {
+        const result = await db.zapRun.updateMany({
+          where: {
+            id: zapRunDetails?.id,
+            status: "RUNNING",
+          },
+          data: {
+            status: "COMPLETE",
+          },
+        });
+        if (result.count) {
+          console.log("Zap Status:Completed");
+        } else {
+          console.log("Zap Status:Error");
+        }
+      }
+
+      console.log(
+        "processing done for action no ",
+        parseInt(message.offset) + 1,
+      );
+
+      await consumer.commitOffsets([
+        {
+          topic: TOPIC_NAME,
+          partition: partition,
+          offset: (parseInt(message.offset) + 1).toString(), // 5
+        },
+      ]);
     },
   });
 }

@@ -43,6 +43,19 @@ importers:
         specifier: ^5.0.6
         version: 5.0.6
 
+  apps/hook:
+    dependencies:
+      '@repo/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
+    devDependencies:
+      '@types/express':
+        specifier: ^5.0.6
+        version: 5.0.6
+
   apps/sweeper:
     dependencies:
       '@repo/db':
@@ -133,6 +146,13 @@ importers:
       '@repo/kafka':
         specifier: workspace:*
         version: link:../../packages/kafka
+      nodemailer:
+        specifier: ^8.0.7
+        version: 8.0.7
+    devDependencies:
+      '@types/nodemailer':
+        specifier: ^8.0.0
+        version: 8.0.0
 
   packages/db:
     dependencies:
@@ -1667,6 +1687,9 @@ packages:
   '@types/node@22.15.3':
     resolution: {integrity: sha512-lX7HFZeHf4QG/J7tBZqrCAXwz9J5RD56Y6MpP0eJkka8p+K0RY/yBTW7CYFJ4VGCclxqOLKmiGP5juQc6MKgcw==}
 
+  '@types/nodemailer@8.0.0':
+    resolution: {integrity: sha512-fyf8jWULsCo0d0BuoQ75i6IeoHs47qcqxWc7yUdUcV0pOZGjUTTOvwdG1PRXUDqN/8A64yQdQdnA2pZgcdi+cA==}
+
   '@types/pg@8.16.0':
     resolution: {integrity: sha512-RmhMd/wD+CF8Dfo+cVIy3RR5cl8CyfXQ0tGgW6XBL8L4LM/UTEbNXYRbLwU6w+CgrKBNbrQWt4FUtTfaU5jSYQ==}
 
@@ -3157,6 +3180,10 @@ packages:
   node-releases@2.0.27:
     resolution: {integrity: sha512-nmh3lCkYZ3grZvqcCH+fjmQ7X+H0OeZgP40OierEaAptX4XofMh5kwNbWh7lBduUzCcV/8kZ+NDLCwm2iorIlA==}
 
+  nodemailer@8.0.7:
+    resolution: {integrity: sha512-pkjE4mkBzQjdJT4/UmlKl3pX0rC9fZmjh7c6C9o7lv66Ac6w9WCnzPzhbPNxwZAzlF4mdq4CSWB5+FbK6FWCow==}
+    engines: {node: '>=6.0.0'}
+
   npm-run-path@4.0.1:
     resolution: {integrity: sha512-S48WzZW777zhNIrn7gxOlISNAqi9ZC/uQFnRdbeIHhZhCA6UqpkOT8T1G7BvfdgP4Er8gF4sUbaS0i7QvIfCWw==}
     engines: {node: '>=8'}
@@ -3915,6 +3942,7 @@ packages:
   typescript@5.9.2:
     resolution: {integrity: sha512-CWBzXQrc/qOkhidw1OzBTQuYRbfyxDXJMVJ1XNwUHGROVmuaeiEm3OslpZ1RV96d7SKKjZKrSJu3+t/xlw3R9A==}
     engines: {node: '>=14.17'}
+    hasBin: true
 
   unbox-primitive@1.1.0:
     resolution: {integrity: sha512-nWJ91DjeOkej/TA8pXQ3myruKpKEYgqvpw9lz4OPHj/NWFNluYrjbz9j01CJ8yKQd2g4jFoOkINCTW2I5LEEyw==}
@@ -5609,6 +5637,10 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
+  '@types/nodemailer@8.0.0':
+    dependencies:
+      '@types/node': 22.15.3
+
   '@types/pg@8.16.0':
     dependencies:
       '@types/node': 22.15.3
@@ -7177,6 +7209,8 @@ snapshots:
       formdata-polyfill: 4.0.10
 
   node-releases@2.0.27: {}
+
+  nodemailer@8.0.7: {}
 
   npm-run-path@4.0.1:
     dependencies:
