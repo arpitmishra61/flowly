@@ -9,6 +9,7 @@
   "author": "Arpit",
   "license": "ISC",
   "dependencies": {
+    "@huggingface/inference": "^4.13.15",
     "@repo/db": "workspace:*",
     "cors": "^2.8.6",
     "dotenv": "^17.2.4",

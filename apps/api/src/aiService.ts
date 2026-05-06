@@ -1,36 +1,28 @@
 import { CONTACTS, findContact, MailOutput, ChatResponse } from "./contacts";
+import "dotenv/config";
+import { InferenceClient } from "@huggingface/inference"
 
 const HF_API_KEY = process.env.HUGGINGFACE_API_KEY || "";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 async function callHuggingFace(prompt: string): Promise<string> {
-  const response = await fetch(
-    "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${HF_API_KEY}`,
-        "Content-Type": "application/json",
+  const client = new InferenceClient(HF_API_KEY);
+
+  const chatCompletion = await client.chatCompletion({
+    model: "zai-org/GLM-5.1:together",
+    messages: [
+      {
+        role: "user",
+        content: prompt,
       },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 512,
-          temperature: 0.7,
-          return_full_text: false,
-        },
-      }),
-    },
-  );
+    ],
+  });
 
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`HuggingFace error: ${response.status} - ${err}`);
-  }
+  console.log(chatCompletion.choices[0].message);
 
-  const data = (await response.json()) as Array<{ generated_text: string }>;
-  return data[0]?.generated_text?.trim() || "";
+
+  return chatCompletion.choices[0].message.content || "";
 }
 
 async function callLLM(prompt: string): Promise<string> {
@@ -80,7 +72,7 @@ Respond ONLY with valid JSON, no extra text:
 [/INST]`;
 
   const raw = await callLLM(prompt);
-
+  console.log(raw);
   // Extract JSON from response
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
@@ -164,7 +156,7 @@ export async function processMessage(
 
   return {
     type: "mail",
-    message: `Mail ready to send to ${contact.name} (${contact.email})`,
+    message: `Mail will be to ${contact.name} (${contact.email})`,
     mailData,
   };
 }

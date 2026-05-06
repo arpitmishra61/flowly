@@ -1,7 +1,7 @@
 "use client"
 import { useState, useRef, useEffect } from "react";
 
-const BACKEND_URL = "http://localhost:3001/api/chat";
+const BACKEND_URL = "http://localhost:5000/api/v1/chat";
 
 const MOCK_MODE = true; // set false when backend is running
 
@@ -24,6 +24,9 @@ function MailCard({ mailData }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
+    useEffect(() => {
+        //send request to webhook if exsists
+    }, [])
     return (
         <div style={{
             marginTop: 10,

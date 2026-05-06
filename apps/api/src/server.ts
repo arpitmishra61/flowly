@@ -4,11 +4,11 @@ import triggerRouter from "./routes/trigger";
 import zapRouter from "./routes/zap";
 import hookRouter from "./routes/hooks";
 import cors from "cors";
-
+import "dotenv/config";
 import { processMessage } from "./aiService";
 
 const app = express();
-import "dotenv/config";
+
 
 app.use(cors());
 app.use(express.json());
