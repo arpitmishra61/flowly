@@ -1,5 +1,6 @@
 import express from "express";
 import db from "@repo/db/client";
+import "dotenv/config";
 
 const app = express();
 app.use(express.json());
@@ -11,7 +12,7 @@ app.post("/hooks/catch/:userId/:zapId", async (req, res) => {
   const body = req.body;
 
   // store in db a new trigger
-
+  console.log("sfsf", zapId, body, userId);
   const run = await db.zapRun.create({
     data: {
       zapId: zapId,

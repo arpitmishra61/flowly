@@ -17,30 +17,16 @@ interface ZapCardProps {
 export function ZapCard({ zap, onToggle, onDelete }: ZapCardProps) {
     const [showMenu, setShowMenu] = useState(false)
 
-    const getStatusBadge = () => {
-        switch (zap.status) {
-            case 'active':
-                return <Badge variant="success">Active</Badge>
-            case 'paused':
-                return <Badge variant="warning">Paused</Badge>
-            case 'error':
-                return <Badge variant="destructive">Error</Badge>
-            default:
-                return null
-        }
-    }
 
     return (
         <div className="group relative bg-white rounded-xl border-2 border-gray-200 p-5 hover:border-primary hover:shadow-lg transition-all duration-200">
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-base truncate">{zap.name}</h3>
-                        {getStatusBadge()}
-                    </div>
+                    <h3>{zap.name}</h3>
+
                     <p className="text-sm text-muted-foreground">
-                        Created {zap.createdAt}
+                        Created {new Date(zap.createdAt).toLocaleDateString()}
                     </p>
                 </div>
 
@@ -60,31 +46,13 @@ export function ZapCard({ zap, onToggle, onDelete }: ZapCardProps) {
                             />
                             <div className="absolute right-0 top-10 z-20 w-48 bg-white rounded-lg border shadow-lg py-1">
                                 <button
-                                    onClick={() => window.open(zap.url, '_blank')}
+                                    onClick={() => { }}
                                     className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
                                 >
                                     <ExternalLink className="h-4 w-4" />
                                     Open in editor
                                 </button>
-                                <button
-                                    onClick={() => {
-                                        onToggle?.(zap.id)
-                                        setShowMenu(false)
-                                    }}
-                                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
-                                >
-                                    {zap.status === 'active' ? (
-                                        <>
-                                            <Pause className="h-4 w-4" />
-                                            Pause Zap
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Play className="h-4 w-4" />
-                                            Activate Zap
-                                        </>
-                                    )}
-                                </button>
+
                                 <hr className="my-1" />
                                 <button
                                     onClick={() => {

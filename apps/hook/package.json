@@ -4,10 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx hook.ts"
   },
   "dependencies": {
     "@repo/db": "workspace:*",
+    "dotenv": "^17.2.4",
     "express": "^5.2.1"
   },
   "keywords": [],

@@ -51,6 +51,9 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
+      dotenv:
+        specifier: ^17.2.4
+        version: 17.2.4
       express:
         specifier: ^5.2.1
         version: 5.2.1

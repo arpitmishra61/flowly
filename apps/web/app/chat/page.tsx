@@ -24,9 +24,6 @@ function MailCard({ mailData }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
-    useEffect(() => {
-        //send request to webhook if exsists
-    }, [])
     return (
         <div style={{
             marginTop: 10,
@@ -53,6 +50,8 @@ function MailCard({ mailData }) {
             </div>
             <div style={{ fontSize: 12.5, color: "#e2e8f0", lineHeight: 1.7 }}>
                 <div><span style={{ color: "#7dd3fc" }}>to:</span> <span style={{ color: "#fbbf24" }}>{mailData.to}</span></div>
+                <div><span style={{ color: "#7dd3fc" }}>subject:</span>
+                    <span style={{ color: "#fbbf24", marginTop: 6 }}>{mailData.subject}</span></div>
                 <div style={{ marginTop: 6 }}>
                     <span style={{ color: "#7dd3fc" }}>body:</span>
                     <div style={{

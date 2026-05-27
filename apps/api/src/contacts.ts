@@ -31,6 +31,7 @@ export function findContact(name: string): Contact | undefined {
 export interface MailOutput {
   to: string;
   body: string;
+  subject: string
 }
 
 export interface ChatResponse {

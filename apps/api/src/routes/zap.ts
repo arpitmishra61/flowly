@@ -1,6 +1,7 @@
 import express from "express";
 import { ZapCreateSchema } from "../types/main";
 import db from "@repo/db/client";
+import "dotenv/config";
 
 const router = express.Router();
 
@@ -38,40 +39,50 @@ router.get("/:pageNo", async (req, res) => {
   let { pageNo } = req.params;
   const page = +pageNo;
   const limit = 10;
-
-  const zaps = await db.zap.findMany({
-    take: 10,
-    include: {
-      trigger: {
-        include: {
-          type: true, // AvailableTrigger
+  try {
+    const zaps = await db.zap.findMany({
+      take: limit,
+      include: {
+        trigger: {
+          include: {
+            type: true, // AvailableTrigger
+          },
+        },
+        actions: {
+          include: {
+            type: true, // AvailableAction
+          },
+          orderBy: {
+            sortingOrder: "asc",
+          },
         },
       },
-      actions: {
-        include: {
-          type: true, // AvailableAction
-        },
-        orderBy: {
-          sortingOrder: "asc",
-        },
-      },
-    },
-  });
+    });
 
-  const formatted = zaps.map((zap) => ({
-    id: zap.id,
-    trigger: zap.trigger
-      ? {
+    const formatted = zaps.map((zap) => ({
+      id: zap.id,
+      name: zap.name,
+      createdAt: zap.createdAt,
+      lastRun: zap.finishedAt,
+      trigger: zap.trigger
+        ? {
           name: zap.trigger.type.name,
           imageUrl: zap.trigger.type.imageUrl,
         }
-      : null,
-    actions: zap.actions.map((action) => ({
-      name: action.type.name,
-      imageUrl: action.type.imageUrl,
-    })),
-  }));
-  res.json(formatted);
+        : null,
+      actions: zap.actions.map((action) => ({
+        name: action.type.name,
+        imageUrl: action.type.imageUrl,
+      })),
+    }));
+    res.json(formatted);
+
+  }
+  catch (err: any) {
+    console.log("DB Error ", err?.message);
+    res.json({ error: true, msg: err?.message });
+
+  }
 });
 
 export default router;

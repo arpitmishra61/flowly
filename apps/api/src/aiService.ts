@@ -32,8 +32,12 @@ async function callLLM(prompt: string): Promise<string> {
       return await callHuggingFace(prompt);
     } catch (e) {
       console.warn("HuggingFace failed, trying OpenRouter:", e);
+      return "Error"
+
     }
+
   }
+  return "Error"
 }
 
 // ── Intent Detection ──────────────────────────────────────────────────────────
@@ -44,6 +48,8 @@ interface ParsedIntent {
   explicitBody?: string;
   needsGeneration: boolean;
   topic?: string;
+  subject?: string,
+  error: boolean
 }
 
 async function detectIntent(userMessage: string): Promise<ParsedIntent> {
@@ -60,6 +66,7 @@ Determine:
 2. Who is the recipient? (name only, or null)
 3. Did the user provide the exact message body, or do they want you to generate content about a topic?
 4. What topic/content should be generated? (null if user gave exact body)
+5.Did the user provide the exact message subject, if not generate a good subject according to the content otherwise keep the subject as user provided
 
 Respond ONLY with valid JSON, no extra text:
 {
@@ -67,14 +74,17 @@ Respond ONLY with valid JSON, no extra text:
   "recipientName": string | null,
   "explicitBody": string | null,
   "needsGeneration": boolean,
-  "topic": string | null
+  "topic": string | null,
+  "subject": string | null
 }
 [/INST]`;
 
   const raw = await callLLM(prompt);
-  console.log(raw);
+  if (raw === "Error") {
+    return { error: true, needsGeneration: false, isMailIntent: false }
+  }
   // Extract JSON from response
-  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  const jsonMatch = raw?.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     throw new Error("Could not parse intent JSON from LLM response");
   }
@@ -116,6 +126,13 @@ export async function processMessage(
   userMessage: string,
 ): Promise<ChatResponse> {
   const intent = await detectIntent(userMessage);
+  if (intent.error) {
+    return {
+      type: "general",
+      message: "Error occured during processing the request.",
+    };
+
+  }
 
   if (!intent.isMailIntent) {
     // General question - answer from LLM knowledge
@@ -148,15 +165,32 @@ export async function processMessage(
   } else {
     body = userMessage;
   }
-
+  body = body.trim()
   const mailData: MailOutput = {
     to: contact.email,
-    body: body.trim(),
+    body,
+    subject: intent.subject || "Write your own subject"
   };
+  const url = `http://localhost:3002/hooks/catch/${process.env.USER_ID}/${process.env.HOOK_ID}`
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ body, to: contact.email, subject: intent.subject }),
+  });
+  if (response.status === 200) {
+    return {
+      type: "mail",
+      message: `Mail will be sent to ${contact.name} (${contact.email})`,
+      mailData,
+    };
 
+  }
   return {
-    type: "mail",
-    message: `Mail will be to ${contact.name} (${contact.email})`,
+    type: "general",
+    message: `Mail Failed`,
     mailData,
   };
+
 }

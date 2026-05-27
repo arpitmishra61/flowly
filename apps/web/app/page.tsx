@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Plus, Search, Filter } from "lucide-react"
+import { Plus, Search, Filter, Loader, LoaderCircle } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,9 @@ export type Zap = {
     id: string;
     trigger: TriggerInfo | null;
     actions: ActionInfo[];
+    createdAt: string
+    name: string,
+    finishedAt: string
 };
 
 type ZapResponse = Zap[];
@@ -29,16 +32,17 @@ export default function Dashboard() {
     const [activeTab, setActiveTab] = useState<'all' | 'running'>('all')
     const [searchQuery, setSearchQuery] = useState('')
     const [zaps, setZaps] = useState<ZapResponse>([])
+    const [loading, setLoading] = useState<boolean>(true)
 
     useEffect(() => {
         axios.get("http://localhost:5000/api/v1/zap/1").then(res => {
             setZaps(res.data)
         }).catch(err => {
             console.log("error fetching zaps")
-        })
+        }).finally(() => setLoading(false))
     }, [])
 
-    const filteredZaps = zaps || zaps.filter(zap => {
+    const filteredZaps = zaps.filter(zap => {
         const matchesSearch = zap.name.toLowerCase().includes(searchQuery.toLowerCase())
         const matchesTab = activeTab === 'all' || (activeTab === 'running' && zap.status === 'active')
         return matchesSearch && matchesTab
@@ -58,6 +62,9 @@ export default function Dashboard() {
         if (confirm('Are you sure you want to delete this Zap?')) {
             setZaps(zaps.filter(zap => zap.id !== id))
         }
+    }
+    if (loading) {
+        return <LoaderCircle />
     }
     if (!zaps.length) {
         return <h3>No Zaps</h3>

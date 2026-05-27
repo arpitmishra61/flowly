@@ -17,13 +17,15 @@ model User {
 }
 
 model Zap {
-  id      String   @unique @default(uuid())
-  name    String   @default("New Zap")
-  user    User?    @relation(fields: [userId], references: [id])
-  userId  Int
-  trigger Trigger?
-  actions Action[]
-  zapRuns ZapRun[]
+  id         String    @unique @default(uuid())
+  name       String    @default("New Zap")
+  user       User?     @relation(fields: [userId], references: [id])
+  userId     Int
+  createdAt  DateTime  @default(now())
+  finishedAt DateTime?
+  trigger    Trigger?
+  actions    Action[]
+  zapRuns    ZapRun[]
 }
 
 model Trigger {
