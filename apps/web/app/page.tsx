@@ -35,7 +35,7 @@ export default function Dashboard() {
     const [loading, setLoading] = useState<boolean>(true)
 
     useEffect(() => {
-        axios.get("http://localhost:5000/api/v1/zap/1").then(res => {
+        axios.get("http://localhost:5001/api/v1/zap/1").then(res => {
             setZaps(res.data)
         }).catch(err => {
             console.log("error fetching zaps")

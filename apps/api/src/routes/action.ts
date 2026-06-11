@@ -3,6 +3,7 @@ import express from "express";
 const router = express.Router();
 
 router.get("/", async (req, res) => {
+  console.log("Fef");
   const availActions = await db.availableAction.findMany();
   res.json(availActions);
 });

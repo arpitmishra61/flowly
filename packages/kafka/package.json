@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "docker-compose up"
+    "dev": "docker compose up && node wait.js"
   },
   "keywords": [],
   "author": "",

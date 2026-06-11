@@ -10,7 +10,7 @@ import Image from "next/image"
 import { useAtom } from "jotai"
 import { ActionsAtom, TriggerAtom } from "@/atoms"
 
-const API = "http://localhost:5000"
+const API = "http://localhost:5001"
 interface AppSelectionModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void

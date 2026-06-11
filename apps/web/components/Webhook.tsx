@@ -6,7 +6,7 @@ import { fetchTriggerData, TriggerAtom } from '@/atoms'
 
 export default function Webhook() {
 
-    const API = "http://localhost:5000";
+    const API = "http://localhost:5001";
     const [trigger, setTrigger] = useAtom(TriggerAtom);
     const [, fetchData] = useAtom(fetchTriggerData);
     const metaData = trigger?.app?.metaData || {} as { jsonData: string, webhookUrl: string }

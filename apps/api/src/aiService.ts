@@ -1,6 +1,6 @@
 import { CONTACTS, findContact, MailOutput, ChatResponse } from "./contacts";
 import "dotenv/config";
-import { InferenceClient } from "@huggingface/inference"
+import { InferenceClient } from "@huggingface/inference";
 
 const HF_API_KEY = process.env.HUGGINGFACE_API_KEY || "";
 
@@ -10,7 +10,7 @@ async function callHuggingFace(prompt: string): Promise<string> {
   const client = new InferenceClient(HF_API_KEY);
 
   const chatCompletion = await client.chatCompletion({
-    model: "zai-org/GLM-5.1:together",
+    model: "openai/gpt-oss-20b:groq",
     messages: [
       {
         role: "user",
@@ -20,7 +20,6 @@ async function callHuggingFace(prompt: string): Promise<string> {
   });
 
   console.log(chatCompletion.choices[0].message);
-
 
   return chatCompletion.choices[0].message.content || "";
 }
@@ -32,12 +31,10 @@ async function callLLM(prompt: string): Promise<string> {
       return await callHuggingFace(prompt);
     } catch (e) {
       console.warn("HuggingFace failed, trying OpenRouter:", e);
-      return "Error"
-
+      return "Error";
     }
-
   }
-  return "Error"
+  return "Error";
 }
 
 // ── Intent Detection ──────────────────────────────────────────────────────────
@@ -48,8 +45,8 @@ interface ParsedIntent {
   explicitBody?: string;
   needsGeneration: boolean;
   topic?: string;
-  subject?: string,
-  error: boolean
+  subject?: string;
+  error: boolean;
 }
 
 async function detectIntent(userMessage: string): Promise<ParsedIntent> {
@@ -81,7 +78,7 @@ Respond ONLY with valid JSON, no extra text:
 
   const raw = await callLLM(prompt);
   if (raw === "Error") {
-    return { error: true, needsGeneration: false, isMailIntent: false }
+    return { error: true, needsGeneration: false, isMailIntent: false };
   }
   // Extract JSON from response
   const jsonMatch = raw?.match(/\{[\s\S]*\}/);
@@ -131,7 +128,6 @@ export async function processMessage(
       type: "general",
       message: "Error occured during processing the request.",
     };
-
   }
 
   if (!intent.isMailIntent) {
@@ -165,17 +161,17 @@ export async function processMessage(
   } else {
     body = userMessage;
   }
-  body = body.trim()
+  body = body.trim();
   const mailData: MailOutput = {
     to: contact.email,
     body,
-    subject: intent.subject || "Write your own subject"
+    subject: intent.subject || "Write your own subject",
   };
-  const url = `http://localhost:3002/hooks/catch/${process.env.USER_ID}/${process.env.HOOK_ID}`
+  const url = `http://localhost:3002/hooks/catch/${process.env.USER_ID}/${process.env.HOOK_ID}`;
   const response = await fetch(url, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({ body, to: contact.email, subject: intent.subject }),
   });
@@ -185,12 +181,10 @@ export async function processMessage(
       message: `Mail will be sent to ${contact.name} (${contact.email})`,
       mailData,
     };
-
   }
   return {
     type: "general",
     message: `Mail Failed`,
     mailData,
   };
-
 }

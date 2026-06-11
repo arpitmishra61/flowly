@@ -122,7 +122,7 @@ export function ZapBuilder() {
           <div className="flex items-center gap-3">
             <Button variant="outline">Test run</Button>
             <Button onClick={() => {
-              let url = "http://localhost:5000/api/v1/zap"
+              let url = "http://localhost:5001/api/v1/zap"
               console.log(triggerData, actionData)
               const data = {
                 availableTriggerId: `${triggerData?.id}`,

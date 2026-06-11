@@ -8,7 +8,7 @@ export const MetaDataAtom = atom<Record<string, string> | null>(null);
 export const SaveNodeAction = atom<any>(null);
 export const PublishModalOpenAtom = atom<boolean>(false);
 
-const API = "http://localhost:5000";
+const API = "http://localhost:5001";
 
 export const fetchTriggerData = atom(null, async (get, set) => {
   if (get(TriggerAtom)?.app?.options) return;

@@ -1,7 +1,7 @@
 "use client"
 import { useState, useRef, useEffect } from "react";
 
-const BACKEND_URL = "http://localhost:5000/api/v1/chat";
+const BACKEND_URL = "http://localhost:5001/api/v1/chat";
 
 const MOCK_MODE = true; // set false when backend is running
 
