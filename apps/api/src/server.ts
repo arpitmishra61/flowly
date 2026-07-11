@@ -4,6 +4,7 @@ import triggerRouter from "./routes/trigger";
 import zapRouter from "./routes/zap";
 import hookRouter from "./routes/hooks";
 import userRouter from "./routes/user";
+import contactRouter from "./routes/contact";
 import cors from "cors";
 import "dotenv/config";
 import { processMessage } from "./aiService";
@@ -18,9 +19,15 @@ app.use("/api/v1/triggers", triggerRouter);
 app.use("/api/v1/zap", zapRouter);
 app.use("/api/v1/hook", hookRouter);
 app.use("/api/v1/user", userRouter);
+app.use("/api/v1/contacts", contactRouter);
 app.post("/api/v1/chat", async (req, res) => {
   console.log(req.body);
-  const { message, from } = req.body as { message?: string; from?: string };
+  const { message, from, userId, hookId } = req.body as {
+    message?: string;
+    from?: string;
+    userId?: string;
+    hookId?: string;
+  };
 
   if (!message || typeof message !== "string" || message.trim() === "") {
     res.status(400).json({ error: "message field is required" });
@@ -29,7 +36,7 @@ app.post("/api/v1/chat", async (req, res) => {
 
   try {
     console.log(`Processing message: "${message.substring(0, 100)}..."`);
-    const result = await processMessage(message.trim(), from);
+    const result = await processMessage(message.trim(), from, userId, hookId);
 
     res.json({
       success: true,

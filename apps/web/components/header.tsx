@@ -25,13 +25,13 @@ export function Header() {
           <span className="text-lg font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
             Flowly
           </span>
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-2">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+                  "px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors",
                   pathname === link.href
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"

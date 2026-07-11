@@ -2,17 +2,28 @@
 import { useState, useRef, useEffect } from "react";
 import { useSession } from "next-auth/react";
 
-const BACKEND_URL = "http://localhost:5001/api/v1/chat";
+const API_BASE = "http://localhost:5001";
+const BACKEND_URL = `${API_BASE}/api/v1/chat`;
 
 const MOCK_MODE = true; // set false when backend is running
 
-async function sendToBackend(message: string, from?: string | null) {
+async function fetchHookConfig(email: string) {
+    const res = await fetch(`${API_BASE}/api/v1/user/hook-id?email=${encodeURIComponent(email)}`);
+    if (!res.ok) return { userId: undefined, hookId: undefined };
+    const data = await res.json();
+    return { userId: data.userId, hookId: data.hookId };
+}
 
-
+async function sendToBackend(
+    message: string,
+    from?: string | null,
+    userId?: string | number | null,
+    hookId?: string | null,
+) {
     const res = await fetch(BACKEND_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, from }),
+        body: JSON.stringify({ message, from, userId, hookId }),
     });
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
     return res.json();
@@ -174,12 +185,19 @@ export default function App() {
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [hookConfig, setHookConfig] = useState({ userId: undefined, hookId: undefined });
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, loading]);
+
+    useEffect(() => {
+        const email = session?.user?.email;
+        if (!email) return;
+        fetchHookConfig(email).then(setHookConfig);
+    }, [session?.user?.email]);
 
     const send = async (text) => {
         const msg = (text || input).trim();
@@ -196,7 +214,7 @@ export default function App() {
         setLoading(true);
 
         try {
-            const data = await sendToBackend(msg, session?.user?.email);
+            const data = await sendToBackend(msg, session?.user?.email, hookConfig.userId, hookConfig.hookId);
             const aiMsg = {
                 id: Date.now() + 1, role: "assistant",
                 type: data.type,
@@ -228,8 +246,10 @@ export default function App() {
             flexDirection: "column",
             fontFamily: "'Inter', 'Segoe UI', sans-serif",
         }}>
-            <style>{`
+            <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+      `}</style>
+            <style jsx>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -386,7 +406,7 @@ export default function App() {
                 </div>
             </div>
 
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
     );
 }

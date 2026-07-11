@@ -1,30 +1,23 @@
-// Known contacts - extend this array as needed
+import db from "@repo/db/client";
+
 export interface Contact {
   name: string;
   email: string;
-  aliases?: string[]; // alternative names (e.g., "Chris", "Christopher")
 }
 
-export const CONTACTS: Contact[] = [
-  { name: "Chris", email: "chris@gmail.com", aliases: ["christopher"] },
-  {
-    name: "Arpit",
-    email: "arpitmishra6000@gmail.com",
-    aliases: ["arpit mishra"],
-  },
-  { name: "Priya", email: "priya@gmail.com" },
-  { name: "Rahul", email: "rahul@gmail.com" },
-  { name: "Sarah", email: "sarah@gmail.com" },
-  { name: "John", email: "john.doe@gmail.com", aliases: ["johnny"] },
-];
+export async function getContactsForUser(ownerEmail: string): Promise<Contact[]> {
+  const user = await db.user.findUnique({
+    where: { email: ownerEmail },
+    include: { contacts: true },
+  });
 
-export function findContact(name: string): Contact | undefined {
+  return user?.contacts.map((c) => ({ name: c.name, email: c.email })) || [];
+}
+
+export function findContact(contacts: Contact[], name: string): Contact | undefined {
   const lower = name.toLowerCase().trim();
-  return CONTACTS.find(
-    (c) =>
-      c.name.toLowerCase() === lower ||
-      c.email.toLowerCase().includes(lower) ||
-      (c.aliases || []).some((a) => a.toLowerCase() === lower),
+  return contacts.find(
+    (c) => c.name.toLowerCase() === lower || c.email.toLowerCase().includes(lower),
   );
 }
 

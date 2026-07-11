@@ -1,4 +1,4 @@
-import { CONTACTS, findContact, MailOutput, ChatResponse } from "./contacts";
+import { Contact, getContactsForUser, findContact, MailOutput, ChatResponse } from "./contacts";
 import "dotenv/config";
 import { InferenceClient } from "@huggingface/inference";
 
@@ -49,8 +49,8 @@ interface ParsedIntent {
   error: boolean;
 }
 
-async function detectIntent(userMessage: string): Promise<ParsedIntent> {
-  const contactNames = CONTACTS.map((c) => c.name).join(", ");
+async function detectIntent(userMessage: string, contacts: Contact[]): Promise<ParsedIntent> {
+  const contactNames = contacts.map((c) => c.name).join(", ");
 
   const prompt = `<s>[INST] You are an intent parser. Analyze the user message and extract structured info.
 
@@ -122,8 +122,11 @@ Provide a helpful, accurate response. [/INST]`;
 export async function processMessage(
   userMessage: string,
   fromEmail?: string,
+  userId?: string,
+  hookId?: string,
 ): Promise<ChatResponse> {
-  const intent = await detectIntent(userMessage);
+  const contacts = fromEmail ? await getContactsForUser(fromEmail) : [];
+  const intent = await detectIntent(userMessage, contacts);
   if (intent.error) {
     return {
       type: "general",
@@ -142,12 +145,12 @@ export async function processMessage(
 
   // Mail intent detected
   const recipientName = intent.recipientName || "";
-  const contact = findContact(recipientName);
+  const contact = findContact(contacts, recipientName);
 
   if (!contact) {
     return {
       type: "general",
-      message: `I couldn't find "${recipientName}" in your contacts. Known contacts are: ${CONTACTS.map((c) => c.name).join(", ")}.`,
+      message: `I couldn't find "${recipientName}" in your contacts. Known contacts are: ${contacts.map((c) => c.name).join(", ")}.`,
     };
   }
 
@@ -168,7 +171,15 @@ export async function processMessage(
     body,
     subject: intent.subject || "Write your own subject",
   };
-  const url = `http://localhost:3002/hooks/catch/${process.env.USER_ID}/${process.env.HOOK_ID}`;
+  if (!userId || !hookId) {
+    return {
+      type: "general",
+      message: "AI chat is not configured with a hook. Add a Hook ID in Settings first.",
+      mailData,
+    };
+  }
+
+  const url = `http://localhost:3002/hooks/catch/${userId}/${hookId}`;
   const response = await fetch(url, {
     method: "POST",
     headers: {

@@ -1,6 +1,6 @@
 "use client"
 
-import { MoreVertical, Play, Pause, Trash2, ExternalLink, ChevronRight } from "lucide-react"
+import { MoreVertical, Play, Pause, Trash2, ExternalLink, ChevronRight, Copy, Check } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,13 @@ interface ZapCardProps {
 
 export function ZapCard({ zap, onToggle, onDelete }: ZapCardProps) {
     const [showMenu, setShowMenu] = useState(false)
+    const [copied, setCopied] = useState(false)
+
+    const handleCopyHookId = async () => {
+        await navigator.clipboard.writeText(zap.id)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 1500)
+    }
 
 
     return (
@@ -28,6 +35,19 @@ export function ZapCard({ zap, onToggle, onDelete }: ZapCardProps) {
                     <p className="text-sm text-muted-foreground">
                         Created {new Date(zap.createdAt).toLocaleDateString()}
                     </p>
+
+                    <button
+                        onClick={handleCopyHookId}
+                        className="mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                        title="Copy Hook ID"
+                    >
+                        <span className="truncate max-w-[160px]">Hook ID: {zap.id}</span>
+                        {copied ? (
+                            <Check className="h-3 w-3 flex-shrink-0 text-green-600" />
+                        ) : (
+                            <Copy className="h-3 w-3 flex-shrink-0" />
+                        )}
+                    </button>
                 </div>
 
                 <div className="relative">

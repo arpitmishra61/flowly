@@ -9,6 +9,12 @@ import { CheckCircle2, AlertTriangle, ExternalLink } from "lucide-react";
 
 const API = "http://localhost:5001";
 
+interface Contact {
+  id: number;
+  name: string;
+  email: string;
+}
+
 export default function SettingsPage() {
   const { data: session } = useSession();
   const email = session?.user?.email;
@@ -19,6 +25,26 @@ export default function SettingsPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactSaving, setContactSaving] = useState(false);
+  const [contactError, setContactError] = useState("");
+
+  const [hookId, setHookId] = useState("");
+  const [savedHookId, setSavedHookId] = useState("");
+  const [hookSaving, setHookSaving] = useState(false);
+  const [hookError, setHookError] = useState("");
+  const [hookSuccess, setHookSuccess] = useState(false);
+
+  const loadContacts = () => {
+    if (!email) return;
+    fetch(`${API}/api/v1/contacts?email=${encodeURIComponent(email)}`)
+      .then((res) => res.json())
+      .then((data) => setContacts(data.contacts || []))
+      .catch(() => setContacts([]));
+  };
+
   useEffect(() => {
     if (!email) return;
     fetch(`${API}/api/v1/user/google-secret/status?email=${encodeURIComponent(email)}`)
@@ -26,6 +52,72 @@ export default function SettingsPage() {
       .then((data) => setConfigured(!!data.configured))
       .catch(() => setConfigured(null));
   }, [email]);
+
+  useEffect(() => {
+    loadContacts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email]);
+
+  useEffect(() => {
+    if (!email) return;
+    fetch(`${API}/api/v1/user/hook-id?email=${encodeURIComponent(email)}`)
+      .then((res) => res.json())
+      .then((data) => setSavedHookId(data.hookId || ""))
+      .catch(() => setSavedHookId(""));
+  }, [email]);
+
+  const handleAddContact = async () => {
+    if (!email || !contactName.trim() || !contactEmail.trim()) return;
+    setContactSaving(true);
+    setContactError("");
+    try {
+      const res = await fetch(`${API}/api/v1/contacts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          name: contactName.trim(),
+          contactEmail: contactEmail.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to add contact");
+      }
+      setContactName("");
+      setContactEmail("");
+      loadContacts();
+    } catch (e: any) {
+      setContactError(e.message || "Failed to add contact");
+    } finally {
+      setContactSaving(false);
+    }
+  };
+
+  const handleSaveHookId = async () => {
+    if (!email || !hookId.trim()) return;
+    setHookSaving(true);
+    setHookError("");
+    setHookSuccess(false);
+    try {
+      const res = await fetch(`${API}/api/v1/user/hook-id`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, hookId: hookId.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to save Hook ID");
+      }
+      setSavedHookId(data.hookId);
+      setHookSuccess(true);
+      setHookId("");
+    } catch (e: any) {
+      setHookError(e.message || "Failed to save Hook ID");
+    } finally {
+      setHookSaving(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!email || !password.trim()) return;
@@ -147,6 +239,77 @@ export default function SettingsPage() {
           >
             {saving ? "Saving..." : "Save"}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>AI Chat Hook</CardTitle>
+          <CardDescription>
+            {savedHookId
+              ? `Hook ID configured: ${savedHookId}`
+              : "Enter the Hook ID the AI chat assistant should send drafted mails to."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Input
+            placeholder="Hook ID"
+            value={hookId}
+            onChange={(e) => setHookId(e.target.value)}
+            disabled={!email || hookSaving}
+          />
+          {hookError && <p className="text-sm text-destructive">{hookError}</p>}
+          {hookSuccess && <p className="text-sm text-green-600">Saved successfully.</p>}
+          <Button
+            onClick={handleSaveHookId}
+            disabled={!email || !hookId.trim() || hookSaving}
+          >
+            {hookSaving ? "Saving..." : "Save"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Contacts</CardTitle>
+          <CardDescription>
+            Add people Flowly can send mail to on your behalf by name.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {contacts.length > 0 && (
+            <ul className="divide-y rounded-lg border">
+              {contacts.map((c) => (
+                <li key={c.id} className="flex items-center justify-between px-4 py-2 text-sm">
+                  <span className="font-medium">{c.name}</span>
+                  <span className="text-muted-foreground">{c.email}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              placeholder="Name"
+              value={contactName}
+              onChange={(e) => setContactName(e.target.value)}
+              disabled={!email || contactSaving}
+            />
+            <Input
+              type="email"
+              placeholder="Email"
+              value={contactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              disabled={!email || contactSaving}
+            />
+            <Button
+              onClick={handleAddContact}
+              disabled={!email || !contactName.trim() || !contactEmail.trim() || contactSaving}
+            >
+              {contactSaving ? "Adding..." : "Add"}
+            </Button>
+          </div>
+          {contactError && <p className="text-sm text-destructive">{contactError}</p>}
         </CardContent>
       </Card>
     </div>

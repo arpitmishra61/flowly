@@ -45,4 +45,47 @@ router.get("/google-secret/status", async (req, res) => {
   res.json({ success: true, configured: !!user.googleSecret });
 });
 
+router.post("/hook-id", async (req, res) => {
+  const { email, hookId } = req.body as {
+    email?: string;
+    hookId?: string;
+  };
+
+  if (!email || !hookId) {
+    return res
+      .status(400)
+      .json({ success: false, message: "email and hookId are required" });
+  }
+
+  try {
+    const user = await db.user.update({
+      where: { email },
+      data: { hookId },
+    });
+    res.json({ success: true, email: user.email, hookId: user.hookId });
+  } catch (err: any) {
+    console.log("DB Error ", err?.message);
+    res.status(404).json({ success: false, message: "User not found" });
+  }
+});
+
+router.get("/hook-id", async (req, res) => {
+  const { email } = req.query as { email?: string };
+
+  if (!email) {
+    return res.status(400).json({ success: false, message: "email is required" });
+  }
+
+  const user = await db.user.findUnique({
+    where: { email },
+    select: { id: true, hookId: true },
+  });
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found" });
+  }
+
+  res.json({ success: true, userId: user.id, hookId: user.hookId });
+});
+
 export default router;
