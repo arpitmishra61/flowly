@@ -121,6 +121,7 @@ Provide a helpful, accurate response. [/INST]`;
 
 export async function processMessage(
   userMessage: string,
+  fromEmail?: string,
 ): Promise<ChatResponse> {
   const intent = await detectIntent(userMessage);
   if (intent.error) {
@@ -173,7 +174,12 @@ export async function processMessage(
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ body, to: contact.email, subject: intent.subject }),
+    body: JSON.stringify({
+      body,
+      to: contact.email,
+      subject: intent.subject,
+      from: fromEmail,
+    }),
   });
   if (response.status === 200) {
     return {

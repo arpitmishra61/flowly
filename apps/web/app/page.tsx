@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSession } from "next-auth/react"
 import { Plus, Search, Filter, Loader, LoaderCircle } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
@@ -8,6 +9,9 @@ import { Button } from "@/components/ui/button"
 import { ZapCard } from "@/components/zap-card"
 import Link from "next/link"
 import axios from "axios"
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5001"
+
 type TriggerInfo = {
     name: string;
     imageUrl: string;
@@ -29,18 +33,22 @@ export type Zap = {
 
 type ZapResponse = Zap[];
 export default function Dashboard() {
+    const { data: session, status: sessionStatus } = useSession()
     const [activeTab, setActiveTab] = useState<'all' | 'running'>('all')
     const [searchQuery, setSearchQuery] = useState('')
     const [zaps, setZaps] = useState<ZapResponse>([])
     const [loading, setLoading] = useState<boolean>(true)
 
     useEffect(() => {
-        axios.get("http://localhost:5001/api/v1/zap/1").then(res => {
+        if (sessionStatus !== "authenticated") return
+        axios.get(`${API_URL}/api/v1/zap/1`, {
+            params: { userId: session.user.id },
+        }).then(res => {
             setZaps(res.data)
         }).catch(err => {
             console.log("error fetching zaps")
         }).finally(() => setLoading(false))
-    }, [])
+    }, [sessionStatus, session?.user.id])
 
     const filteredZaps = zaps.filter(zap => {
         const matchesSearch = zap.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -63,18 +71,19 @@ export default function Dashboard() {
             setZaps(zaps.filter(zap => zap.id !== id))
         }
     }
-    if (loading) {
-        return <LoaderCircle />
-    }
-    if (!zaps.length) {
-        return <h3>No Zaps</h3>
+    if (sessionStatus === "loading" || loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
+                <LoaderCircle className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+        )
     }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
-            {/* Header */}
-            <header className="border-b bg-white/80 backdrop-blur-lg sticky top-0 z-40">
-                <div className="max-w-7xl mx-auto px-6 py-4">
+            {/* Page title */}
+            <div className="border-b bg-white/60 backdrop-blur-sm">
+                <div className="max-w-7xl mx-auto px-6 py-6">
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
@@ -92,7 +101,7 @@ export default function Dashboard() {
                         </Link>
                     </div>
                 </div>
-            </header>
+            </div>
 
             {/* Main Content */}
             <div className="max-w-7xl mx-auto px-6 py-8">

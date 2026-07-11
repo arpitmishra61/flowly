@@ -1,17 +1,18 @@
 "use client"
 import { useState, useRef, useEffect } from "react";
+import { useSession } from "next-auth/react";
 
 const BACKEND_URL = "http://localhost:5001/api/v1/chat";
 
 const MOCK_MODE = true; // set false when backend is running
 
-async function sendToBackend(message: string) {
+async function sendToBackend(message: string, from?: string | null) {
 
 
     const res = await fetch(BACKEND_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, from }),
     });
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
     return res.json();
@@ -162,6 +163,7 @@ const SUGGESTIONS = [
 ];
 
 export default function App() {
+    const { data: session } = useSession();
     const [messages, setMessages] = useState([
         {
             id: 1, role: "assistant", type: "general",
@@ -194,7 +196,7 @@ export default function App() {
         setLoading(true);
 
         try {
-            const data = await sendToBackend(msg);
+            const data = await sendToBackend(msg, session?.user?.email);
             const aiMsg = {
                 id: Date.now() + 1, role: "assistant",
                 type: data.type,

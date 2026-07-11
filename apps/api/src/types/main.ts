@@ -9,4 +9,5 @@ export const ZapCreateSchema = z.object({
       actionMetadata: z.any().optional(),
     }),
   ),
+  userId: z.coerce.number().optional(),
 });

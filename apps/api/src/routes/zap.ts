@@ -16,7 +16,7 @@ router.post("/", async (req, res) => {
 
   const zap = await db.zap.create({
     data: {
-      userId: 1,
+      userId: parsedData.data.userId ?? 1,
       trigger: {
         create: {
           availTriggerId: +parsedData.data.availableTriggerId,
@@ -37,10 +37,12 @@ router.post("/", async (req, res) => {
 });
 router.get("/:pageNo", async (req, res) => {
   let { pageNo } = req.params;
+  const { userId } = req.query;
   const page = +pageNo;
   const limit = 10;
   try {
     const zaps = await db.zap.findMany({
+      where: userId ? { userId: +userId } : undefined,
       take: limit,
       include: {
         trigger: {

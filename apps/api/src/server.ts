@@ -18,7 +18,7 @@ app.use("/api/v1/zap", zapRouter);
 app.use("/api/v1/hook", hookRouter);
 app.post("/api/v1/chat", async (req, res) => {
   console.log(req.body);
-  const { message } = req.body as { message?: string };
+  const { message, from } = req.body as { message?: string; from?: string };
 
   if (!message || typeof message !== "string" || message.trim() === "") {
     res.status(400).json({ error: "message field is required" });
@@ -27,7 +27,7 @@ app.post("/api/v1/chat", async (req, res) => {
 
   try {
     console.log(`Processing message: "${message.substring(0, 100)}..."`);
-    const result = await processMessage(message.trim());
+    const result = await processMessage(message.trim(), from);
 
     res.json({
       success: true,

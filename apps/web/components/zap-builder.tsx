@@ -9,12 +9,16 @@ import { Button } from "@/components/ui/button"
 import { ZapNode as ZapNodeType, App } from "@/lib/types"
 import { ActionsAtom, MetaDataAtom, PublishModalOpenAtom, SaveNodeAction, TriggerAtom } from "@/atoms"
 import { getDefaultStore, useAtom, useAtomValue, useSetAtom } from "jotai"
+import { useSession } from "next-auth/react"
 
 import axios from "axios"
 import { PublishModal } from "./PublishModal"
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5001"
+
 
 export function ZapBuilder() {
+  const { data: session } = useSession()
   const [nodes, setNodes] = useState<ZapNodeType[]>([
     { id: '1', type: 'trigger', app: null, configured: false }
   ])
@@ -110,9 +114,9 @@ export function ZapBuilder() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-lg sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+      {/* Page title */}
+      <div className="border-b bg-white/60 backdrop-blur-sm">
+        <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
               Zap Builder
@@ -122,7 +126,7 @@ export function ZapBuilder() {
           <div className="flex items-center gap-3">
             <Button variant="outline">Test run</Button>
             <Button onClick={() => {
-              let url = "http://localhost:5001/api/v1/zap"
+              let url = `${API_URL}/api/v1/zap`
               console.log(triggerData, actionData)
               const data = {
                 availableTriggerId: `${triggerData?.id}`,
@@ -132,7 +136,8 @@ export function ZapBuilder() {
                     availableActionId: action?.app?.id.toString(),
                     actionMetadata: action?.app?.metaData.jsonData
                   }
-                })
+                }),
+                userId: session?.user.id
               };
               console.log("data to send ", data)
 
@@ -150,7 +155,7 @@ export function ZapBuilder() {
             }}>Publish</Button>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main Canvas */}
       <div className="max-w-3xl mx-auto px-6 py-12">

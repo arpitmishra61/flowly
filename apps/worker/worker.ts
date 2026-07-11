@@ -36,6 +36,7 @@ async function main() {
         include: {
           zap: {
             include: {
+              user: true,
               actions: {
                 include: {
                   type: true,
@@ -66,8 +67,17 @@ async function main() {
         const subjectData = parse(subject, zapRunMetadata);
         const reciever = parse(to, zapRunMetadata);
 
+        const zapOwner = zapRunDetails?.zap.user;
+
+        if (!zapOwner?.googleSecret) {
+          console.log("Zap owner has no Google app password configured");
+          return;
+        }
+
         const success = await sendMail({
-          from: "arpitmishra61@gmail.com",
+          name: zapOwner.name,
+          from: zapOwner.email,
+          pass: zapOwner.googleSecret,
           to: reciever,
           subject: subjectData,
           body: bodyData,
