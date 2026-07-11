@@ -1,0 +1,15 @@
+-- AlterTable
+ALTER TABLE "Zap" ADD CONSTRAINT "Zap_pkey" PRIMARY KEY ("id");
+
+-- DropForeignKey
+ALTER TABLE "Trigger" DROP CONSTRAINT "Trigger_zapId_fkey";
+ALTER TABLE "Action" DROP CONSTRAINT "Action_zapId_fkey";
+ALTER TABLE "ZapRun" DROP CONSTRAINT "ZapRun_zapId_fkey";
+
+-- DropIndex
+DROP INDEX "Zap_id_key";
+
+-- AddForeignKey
+ALTER TABLE "Trigger" ADD CONSTRAINT "Trigger_zapId_fkey" FOREIGN KEY ("zapId") REFERENCES "Zap"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Action" ADD CONSTRAINT "Action_zapId_fkey" FOREIGN KEY ("zapId") REFERENCES "Zap"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ZapRun" ADD CONSTRAINT "ZapRun_zapId_fkey" FOREIGN KEY ("zapId") REFERENCES "Zap"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

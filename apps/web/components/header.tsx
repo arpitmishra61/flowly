@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { href: "/", label: "My Zaps" },
   { href: "/builder", label: "Builder" },
   { href: "/chat", label: "Chat" },
+  { href: "/settings", label: "Settings" },
 ];
 
 export function Header() {

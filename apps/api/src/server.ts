@@ -3,6 +3,7 @@ import actionRouter from "./routes/action";
 import triggerRouter from "./routes/trigger";
 import zapRouter from "./routes/zap";
 import hookRouter from "./routes/hooks";
+import userRouter from "./routes/user";
 import cors from "cors";
 import "dotenv/config";
 import { processMessage } from "./aiService";
@@ -16,6 +17,7 @@ app.use("/api/v1/actions", actionRouter);
 app.use("/api/v1/triggers", triggerRouter);
 app.use("/api/v1/zap", zapRouter);
 app.use("/api/v1/hook", hookRouter);
+app.use("/api/v1/user", userRouter);
 app.post("/api/v1/chat", async (req, res) => {
   console.log(req.body);
   const { message, from } = req.body as { message?: string; from?: string };
