@@ -28,7 +28,7 @@ export default function AutocompleteBox({ type, placeholder, name, currentValue 
         setValue(text);
 
         const textBeforeCursor = text.slice(0, cursorPos);
-        const match = textBeforeCursor.match(/\{(\w*)$/);
+        const match = textBeforeCursor.match(/\{([\w.]*)$/);
 
         if (match) {
             const search = match[1].toLowerCase();
@@ -52,7 +52,7 @@ export default function AutocompleteBox({ type, placeholder, name, currentValue 
         const textBeforeCursor = value.slice(0, cursorPos);
         const textAfterCursor = value.slice(cursorPos);
 
-        const newBefore = textBeforeCursor.replace(/\{(\w*)$/, `{${selected}}`);
+        const newBefore = textBeforeCursor.replace(/\{([\w.]*)$/, `{${selected}}`);
 
         const newValue = newBefore + textAfterCursor;
         console.log("fsf", textAfterCursor)

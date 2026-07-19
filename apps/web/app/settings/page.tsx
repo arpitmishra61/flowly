@@ -25,6 +25,12 @@ export default function SettingsPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  const [githubToken, setGithubToken] = useState("");
+  const [githubConfigured, setGithubConfigured] = useState<boolean | null>(null);
+  const [githubSaving, setGithubSaving] = useState(false);
+  const [githubError, setGithubError] = useState("");
+  const [githubSuccess, setGithubSuccess] = useState(false);
+
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -51,6 +57,14 @@ export default function SettingsPage() {
       .then((res) => res.json())
       .then((data) => setConfigured(!!data.configured))
       .catch(() => setConfigured(null));
+  }, [email]);
+
+  useEffect(() => {
+    if (!email) return;
+    fetch(`${API}/api/v1/user/github-token/status?email=${encodeURIComponent(email)}`)
+      .then((res) => res.json())
+      .then((data) => setGithubConfigured(!!data.configured))
+      .catch(() => setGithubConfigured(null));
   }, [email]);
 
   useEffect(() => {
@@ -91,6 +105,31 @@ export default function SettingsPage() {
       setContactError(e.message || "Failed to add contact");
     } finally {
       setContactSaving(false);
+    }
+  };
+
+  const handleSaveGithubToken = async () => {
+    if (!email || !githubToken.trim()) return;
+    setGithubSaving(true);
+    setGithubError("");
+    setGithubSuccess(false);
+    try {
+      const res = await fetch(`${API}/api/v1/user/github-token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, githubToken: githubToken.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to save GitHub token");
+      }
+      setGithubConfigured(true);
+      setGithubSuccess(true);
+      setGithubToken("");
+    } catch (e: any) {
+      setGithubError(e.message || "Failed to save GitHub token");
+    } finally {
+      setGithubSaving(false);
     }
   };
 
@@ -238,6 +277,64 @@ export default function SettingsPage() {
             disabled={!email || !password.trim() || saving}
           >
             {saving ? "Saving..." : "Save"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>GitHub Personal Access Token</CardTitle>
+          <CardDescription>
+            {email ? `For ${email} — used by GitHub actions to create issues` : "Sign in to configure your GitHub token"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {githubConfigured !== null && (
+            <div
+              className={`flex items-center gap-2 rounded-lg border px-4 py-3 text-sm ${
+                githubConfigured
+                  ? "bg-green-50 border-green-200 text-green-700"
+                  : "bg-amber-50 border-amber-200 text-amber-700"
+              }`}
+            >
+              {githubConfigured ? (
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+              ) : (
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+              )}
+              <span>
+                {githubConfigured
+                  ? "GitHub token is configured. GitHub actions can create issues."
+                  : "No GitHub token configured yet. GitHub actions will fail until you add one below."}
+              </span>
+            </div>
+          )}
+          <p className="text-sm text-muted-foreground">
+            Generate a token with the <code>repo</code> scope from{" "}
+            <a
+              href="https://github.com/settings/tokens"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary inline-flex items-center gap-1 hover:underline"
+            >
+              GitHub &rarr; Developer settings &rarr; Personal access tokens
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          </p>
+          <Input
+            type="password"
+            placeholder="Paste your GitHub personal access token"
+            value={githubToken}
+            onChange={(e) => setGithubToken(e.target.value)}
+            disabled={!email || githubSaving}
+          />
+          {githubError && <p className="text-sm text-destructive">{githubError}</p>}
+          {githubSuccess && <p className="text-sm text-green-600">Saved successfully.</p>}
+          <Button
+            onClick={handleSaveGithubToken}
+            disabled={!email || !githubToken.trim() || githubSaving}
+          >
+            {githubSaving ? "Saving..." : "Save"}
           </Button>
         </CardContent>
       </Card>

@@ -2,6 +2,7 @@ import db from "@repo/db/client";
 import getKafka from "@repo/kafka/client";
 import parse from "./helper/parser";
 import sendMail from "./helper/actions/sendMail";
+import createIssue from "./helper/actions/createIssue";
 
 async function main() {
   const kafka = getKafka();
@@ -59,10 +60,11 @@ async function main() {
 
       const zapRunMetadata = zapRunDetails?.metadata;
       const actionName = currentAction.type.name;
-      const { body, to, subject } = currentAction.metadata as any;
+      const actionMetadata = currentAction.metadata as any;
 
       if (actionName === "Gmail") {
         console.log("Sending mail");
+        const { body, to, subject } = actionMetadata;
         const bodyData = parse(body, zapRunMetadata);
         const subjectData = parse(subject, zapRunMetadata);
         const reciever = parse(to, zapRunMetadata);
@@ -84,8 +86,43 @@ async function main() {
         });
         if (success) {
           console.log("Email Sent");
+          await db.zapRun.update({
+            where: { id: zapRunId },
+            data: { metadata: { ...(zapRunMetadata as any), gmail: success } },
+          });
         } else {
           console.log("Email Not Sent");
+        }
+      }
+
+      if (actionName === "Github") {
+        console.log("Creating GitHub issue");
+        const { repo, title, body } = actionMetadata;
+        const repoData = parse(repo, zapRunMetadata);
+        const titleData = parse(title, zapRunMetadata);
+        const bodyData = parse(body, zapRunMetadata);
+
+        const zapOwner = zapRunDetails?.zap.user;
+
+        if (!zapOwner?.githubToken) {
+          console.log("Zap owner has no GitHub token configured");
+          return;
+        }
+
+        const success = await createIssue({
+          token: zapOwner.githubToken,
+          repo: repoData,
+          title: titleData,
+          body: bodyData,
+        });
+        if (success) {
+          console.log("Issue Created");
+          await db.zapRun.update({
+            where: { id: zapRunId },
+            data: { metadata: { ...(zapRunMetadata as any), github: success } },
+          });
+        } else {
+          console.log("Issue Not Created");
         }
       }
 

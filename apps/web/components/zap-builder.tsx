@@ -8,7 +8,9 @@ import { ConfigSidebar } from "@/components/config-sidebar"
 import { Button } from "@/components/ui/button"
 import { ZapNode as ZapNodeType, App } from "@/lib/types"
 import { ActionsAtom, MetaDataAtom, PublishModalOpenAtom, SaveNodeAction, TriggerAtom } from "@/atoms"
-import { getDefaultStore, useAtom, useAtomValue, useSetAtom } from "jotai"
+import { ACTION_OUTPUT_KEYS } from "@/lib/actionOutputKeys"
+import { flattenObject } from "@/lib/flattenObject"
+import { getDefaultStore, useAtom, useSetAtom } from "jotai"
 import { useSession } from "next-auth/react"
 
 import axios from "axios"
@@ -32,8 +34,8 @@ export function ZapBuilder() {
 
   const [currentNodeId, setCurrentNodeId] = useState<string | null>(null)
   const [modalType, setModalType] = useState<'trigger' | 'action'>('trigger')
-  const triggerData = useAtomValue(TriggerAtom)
-  const actionData = useAtomValue(ActionsAtom)
+  const [triggerData, setTriggerData] = useAtom(TriggerAtom)
+  const [actionData, setActionData] = useAtom(ActionsAtom)
 
   const currentNode = nodes.find(n => n.id === currentNodeId) || null
 
@@ -82,18 +84,22 @@ export function ZapBuilder() {
         ? { ...node, configured: true, config }
         : node
     ))
-    if (!actionData?.length) {
-      console.log(triggerData)
-      const jsonData = triggerData?.app?.metaData.jsonData
-      setMetaData(metaData => ({ ...metaData, ...jsonData }))
 
-    }
-    else {
-      const jsonData = actionData?.[-1]?.app?.metaData?.jsonData
-      setMetaData(metaData => ({ ...metaData, ...jsonData }))
-    }
+    // Keys available to this node's AutocompleteBox fields: the trigger's
+    // sample payload, plus the known output shape of every action earlier
+    // in the chain (an action can only reference what ran before it).
+    const currentIndex = nodes.findIndex(node => node.id === currentNodeId)
+    const jsonData = flattenObject(triggerData?.app?.metaData?.jsonData ?? {})
+    const outputKeys: Record<string, string> = {}
+    nodes.forEach((node, index) => {
+      if (node.type !== 'action' || index >= currentIndex) return
+      const keys = node.app?.name ? ACTION_OUTPUT_KEYS[node.app.name] : undefined
+      keys?.forEach(key => { outputKeys[key] = key })
+    })
 
-  }, [currentNodeId, actionData, triggerData?.app])
+    setMetaData(metaData => ({ ...metaData, ...jsonData, ...outputKeys }))
+
+  }, [currentNodeId, nodes, triggerData?.app])
 
 
   const handleAddAction = () => {
@@ -107,6 +113,28 @@ export function ZapBuilder() {
 
     if (previousNode?.configured === true) {
       setNodes([...nodes, newNode])
+    }
+  }
+
+  const handleDeleteNode = (nodeId: string) => {
+    const node = nodes.find(n => n.id === nodeId)
+    if (!node) return
+
+    if (node.type === 'trigger') {
+      if (!confirm("Reset this trigger? You'll need to choose an app again.")) return
+      setNodes(nodes => nodes.map(n =>
+        n.id === nodeId ? { ...n, app: null, configured: false } : n
+      ))
+      setTriggerData(null)
+    } else {
+      if (!confirm("Delete this action?")) return
+      setNodes(nodes => nodes.filter(n => n.id !== nodeId))
+      setActionData(actions => actions?.filter(a => a?.id !== nodeId) ?? null)
+    }
+
+    if (currentNodeId === nodeId) {
+      setCurrentNodeId(null)
+      setSidebarOpen(false)
     }
   }
   const previousNode = nodes.at(-1)
@@ -178,6 +206,7 @@ export function ZapBuilder() {
                 key={node.id}
                 node={node}
                 onConfigure={() => handleNodeClick(node.id)}
+                onDelete={() => handleDeleteNode(node.id)}
                 isFirst={index === 0}
               />
             ))}

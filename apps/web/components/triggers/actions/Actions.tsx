@@ -1,25 +1,18 @@
-import { ActionsAtom, SaveNodeAction } from '@/atoms';
-import { useAtom, useSetAtom } from 'jotai';
+import { ActionsAtom } from '@/atoms';
+import { useAtomValue } from 'jotai';
 import React from 'react'
 import GmailAction from './GmailAction';
-import { Button } from '@/components/ui/button';
+import GithubAction from './GithubAction';
 
 export default function Actions({ nodeId }: { nodeId: string }) {
-
+    const actions = useAtomValue(ActionsAtom);
+    const currentAction = actions?.find(action => action?.id === nodeId)
+    const appName = currentAction?.app?.name
 
     return (
         <div>
-
-            {/*
-            which action
-            / gmail actiion render that component send the node id data fetch that node id data from actinState [] array and pass that dta aonly
-
-
-
-            */}
-            <GmailAction nodeId={nodeId} />
-
-
+            {appName === "Gmail" && <GmailAction nodeId={nodeId} />}
+            {appName === "Github" && <GithubAction nodeId={nodeId} />}
         </div>
     )
 }

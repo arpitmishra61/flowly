@@ -16,6 +16,7 @@ model User {
   image         String?
   emailVerified DateTime?
   googleSecret  String?
+  githubToken   String?
   hookId        String?
   zaps          Zap[]
   accounts      Account[]

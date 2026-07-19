@@ -1,6 +1,6 @@
 "use client"
 
-import { Plus, MoreVertical, AlertCircle } from "lucide-react"
+import { Plus, Trash2, AlertCircle } from "lucide-react"
 import { ZapNode as ZapNodeType } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
@@ -8,10 +8,11 @@ import Image from "next/image"
 interface ZapNodeProps {
   node: ZapNodeType
   onConfigure: () => void
+  onDelete?: () => void
   isFirst?: boolean
 }
 
-export function ZapNode({ node, onConfigure, isFirst }: ZapNodeProps) {
+export function ZapNode({ node, onConfigure, onDelete, isFirst }: ZapNodeProps) {
   const isConfigured = node.app !== null
 
   return (
@@ -59,9 +60,18 @@ export function ZapNode({ node, onConfigure, isFirst }: ZapNodeProps) {
                   {node.type === 'trigger' ? 'Select the event' : 'Configure action'}
                 </p>
               </div>
-              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
-                <MoreVertical className="h-5 w-5 text-gray-400" />
-              </button>
+              {onDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDelete()
+                  }}
+                  title={isFirst ? "Reset trigger" : "Delete action"}
+                  className="p-2 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                >
+                  <Trash2 className="h-5 w-5 text-gray-400 hover:text-red-500" />
+                </button>
+              )}
             </>
           ) : (
             <div className="flex items-center gap-3 w-full">
