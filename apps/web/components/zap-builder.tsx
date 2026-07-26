@@ -252,25 +252,25 @@ export function ZapBuilder({ zapId }: { zapId?: string | null }) {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
       {/* Page title */}
       <div className="border-b bg-white/60 backdrop-blur-sm">
-        <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
               {zapId ? "Edit Zap" : "Zap Builder"}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               {zapId ? "Update your automated workflow" : "Create automated workflows"}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline">Test run</Button>
-            <Button onClick={handlePublish}>{zapId ? "Save" : "Publish"}</Button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button variant="outline" size="sm" className="sm:h-10 sm:px-4 sm:text-sm sm:rounded-lg">Test run</Button>
+            <Button size="sm" className="sm:h-10 sm:px-4 sm:text-sm sm:rounded-lg" onClick={handlePublish}>{zapId ? "Save" : "Publish"}</Button>
           </div>
         </div>
       </div>
 
       {/* Main Canvas */}
-      <div className="max-w-3xl mx-auto px-6 py-12">
-        <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-gray-200/60">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
+        <div className="bg-white/60 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl border border-gray-200/60">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold shadow-lg">
               Z
