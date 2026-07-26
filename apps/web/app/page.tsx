@@ -68,7 +68,9 @@ export default function Dashboard() {
 
     const handleDeleteZap = (id: string) => {
         if (confirm('Are you sure you want to delete this Zap?')) {
-            setZaps(zaps.filter(zap => zap.id !== id))
+            axios.delete(`${API_URL}/api/v1/zap/${id}`)
+                .then(() => setZaps(zaps => zaps.filter(zap => zap.id !== id)))
+                .catch(err => console.log("error deleting zap", err))
         }
     }
     if (sessionStatus === "loading" || loading) {

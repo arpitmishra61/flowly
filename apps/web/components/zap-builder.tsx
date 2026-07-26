@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Plus } from "lucide-react"
 import { ZapNode } from "@/components/zap-node"
 import { AppSelectionModal } from "@/components/app-selection-modal"
@@ -19,11 +19,12 @@ import { PublishModal } from "./PublishModal"
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5001"
 
 
-export function ZapBuilder() {
+export function ZapBuilder({ zapId }: { zapId?: string | null }) {
   const { data: session } = useSession()
   const [nodes, setNodes] = useState<ZapNodeType[]>([
     { id: '1', type: 'trigger', app: null, configured: false }
   ])
+  const [zapName, setZapName] = useState<string | null>(null)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -36,6 +37,8 @@ export function ZapBuilder() {
   const [modalType, setModalType] = useState<'trigger' | 'action'>('trigger')
   const [triggerData, setTriggerData] = useAtom(TriggerAtom)
   const [actionData, setActionData] = useAtom(ActionsAtom)
+  const [publishStatus, setPublishStatus] = useState<'publishing' | 'success' | 'error'>('publishing')
+  const [publishedZapId, setPublishedZapId] = useState<string | null>(null)
 
   const currentNode = nodes.find(n => n.id === currentNodeId) || null
 
@@ -85,10 +88,18 @@ export function ZapBuilder() {
         : node
     ))
 
-    // Keys available to this node's AutocompleteBox fields: the trigger's
-    // sample payload, plus the known output shape of every action earlier
-    // in the chain (an action can only reference what ran before it).
+  }, [currentNodeId])
+
+  // Keys available to the currently-open node's AutocompleteBox fields: the
+  // trigger's sample payload, plus the known output shape of every action
+  // earlier in the chain (an action can only reference what ran before it).
+  // Runs as soon as a node's sidebar opens (not only after it's saved) so
+  // autocomplete works while typing into that node for the first time.
+  useEffect(() => {
+    if (!currentNodeId) return
     const currentIndex = nodes.findIndex(node => node.id === currentNodeId)
+    if (currentIndex === -1) return
+
     const jsonData = flattenObject(triggerData?.app?.metaData?.jsonData ?? {})
     const outputKeys: Record<string, string> = {}
     nodes.forEach((node, index) => {
@@ -98,8 +109,76 @@ export function ZapBuilder() {
     })
 
     setMetaData(metaData => ({ ...metaData, ...jsonData, ...outputKeys }))
-
   }, [currentNodeId, nodes, triggerData?.app])
+
+  // When opened as an edit (zapId present), load the zap's saved trigger and
+  // actions and pre-populate the builder's nodes + atoms so it renders as an
+  // already-configured flow instead of starting a fresh one.
+  useEffect(() => {
+    if (!zapId) return
+
+    axios.get(`${API_URL}/api/v1/zap/detail/${zapId}`).then(async (res) => {
+      const zap = res.data
+      setZapName(zap.name)
+
+      const newNodes: ZapNodeType[] = []
+
+      if (zap.trigger) {
+        const triggerId = zap.trigger.type.id
+        const optionsRes = await axios.get<{ name: string }[]>(
+          `${API_URL}/api/v1/triggers/options/${triggerId}`
+        )
+        const options = optionsRes.data
+        const selectedOption = options[0]?.name ?? ""
+
+        newNodes.push({ id: 'trigger', type: 'trigger', app: zap.trigger.type, configured: true })
+
+        setTriggerData({
+          id: triggerId,
+          type: 'trigger',
+          app: {
+            id: triggerId,
+            name: zap.trigger.type.name,
+            imageUrl: zap.trigger.type.imageUrl,
+            options,
+            selectedOption,
+            metaData: { jsonData: zap.trigger.metadata ?? {} },
+          } as any,
+          configured: true,
+        })
+      }
+
+      const newActions: any[] = []
+      for (const [index, action] of zap.actions.entries()) {
+        const nodeId = `action-${index}`
+        const actionId = action.type.id
+        const optionsRes = await axios.get<{ name: string }[]>(
+          `${API_URL}/api/v1/actions/options/${actionId}`
+        )
+        const options = optionsRes.data
+        const selectedOption = options[0]?.name ?? ""
+
+        newNodes.push({ id: nodeId, type: 'action', app: action.type, configured: true })
+        newActions.push({
+          id: nodeId,
+          app: {
+            id: actionId,
+            name: action.type.name,
+            imageUrl: action.type.imageUrl,
+            options,
+            selectedOption,
+            metaData: { jsonData: action.metadata ?? {} },
+          },
+        })
+      }
+
+      setNodes(newNodes)
+      setActionData(newActions)
+    }).catch(err => {
+      console.log("error loading zap for edit", err)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zapId])
 
 
   const handleAddAction = () => {
@@ -140,6 +219,35 @@ export function ZapBuilder() {
   const previousNode = nodes.at(-1)
   console.log("rer", currentNodeId)
 
+  const handlePublish = () => {
+    setPublishStatus('publishing')
+    setPublishModalOpen(true)
+
+    const url = zapId ? `${API_URL}/api/v1/zap/${zapId}` : `${API_URL}/api/v1/zap`
+    const data = {
+      availableTriggerId: `${triggerData?.id}`,
+      triggerMetadata: triggerData?.app?.metaData.jsonData,
+      actions: actionData?.map(action => {
+        return {
+          availableActionId: action?.app?.id.toString(),
+          actionMetadata: action?.app?.metaData.jsonData
+        }
+      }),
+      userId: session?.user.id
+    };
+
+    const request = zapId ? axios.put(url, data) : axios.post(url, data)
+    request
+      .then(response => {
+        setPublishedZapId(response.data?.zapId ?? zapId ?? null)
+        setPublishStatus('success')
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        setPublishStatus('error')
+      })
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
       {/* Page title */}
@@ -147,40 +255,15 @@ export function ZapBuilder() {
         <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-              Zap Builder
+              {zapId ? "Edit Zap" : "Zap Builder"}
             </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Create automated workflows</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {zapId ? "Update your automated workflow" : "Create automated workflows"}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="outline">Test run</Button>
-            <Button onClick={() => {
-              let url = `${API_URL}/api/v1/zap`
-              console.log(triggerData, actionData)
-              const data = {
-                availableTriggerId: `${triggerData?.id}`,
-                triggerMetadata: triggerData?.app?.metaData.jsonData,
-                actions: actionData?.map(action => {
-                  return {
-                    availableActionId: action?.app?.id.toString(),
-                    actionMetadata: action?.app?.metaData.jsonData
-                  }
-                }),
-                userId: session?.user.id
-              };
-              console.log("data to send ", data)
-
-              axios.post(url, data, {
-              })
-                .then(response => {
-                  console.log("Success:", response.data);
-                })
-                .catch(error => {
-                  console.error("Error:", error);
-                });
-
-              setPublishModalOpen(true)
-
-            }}>Publish</Button>
+            <Button onClick={handlePublish}>{zapId ? "Save" : "Publish"}</Button>
           </div>
         </div>
       </div>
@@ -193,7 +276,7 @@ export function ZapBuilder() {
               Z
             </div>
             <div>
-              <h2 className="font-semibold text-lg">Untitled Zap</h2>
+              <h2 className="font-semibold text-lg">{zapName ?? "Untitled Zap"}</h2>
               <p className="text-sm text-muted-foreground">
                 {nodes.filter(n => n.configured).length} of {nodes.length} steps configured
               </p>
@@ -262,6 +345,9 @@ export function ZapBuilder() {
       <PublishModal
         open={publishModalOpen}
         onOpenChange={setPublishModalOpen}
+        status={publishStatus}
+        zapId={publishedZapId}
+        onRetry={handlePublish}
       />
     </div>
   )

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle2, XCircle, Copy, ExternalLink } from "lucide-react"
@@ -8,38 +8,15 @@ import { Loader2, CheckCircle2, XCircle, Copy, ExternalLink } from "lucide-react
 interface PublishModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
+    status: 'publishing' | 'success' | 'error'
+    zapId: string | null
+    onRetry: () => void
 }
 
-type PublishState = 'publishing' | 'success' | 'error'
-
-export function PublishModal({ open, onOpenChange }: PublishModalProps) {
-    const [state, setState] = useState<PublishState>('publishing')
-    const [zapUrl, setZapUrl] = useState<string>('')
+export function PublishModal({ open, onOpenChange, status, zapId, onRetry }: PublishModalProps) {
     const [copied, setCopied] = useState(false)
 
-    useEffect(() => {
-        if (open) {
-            // Reset state when modal opens
-            setState('publishing')
-            setCopied(false)
-
-            // Simulate publishing process
-            const timer = setTimeout(() => {
-                // Randomly decide success or error (80% success rate)
-                const isSuccess = false
-
-                if (isSuccess) {
-                    const generatedUrl = `https://zapier.app/editor/${Math.random().toString(36).substr(2, 9)}`
-                    setZapUrl(generatedUrl)
-                    setState('success')
-                } else {
-                    setState('error')
-                }
-            }, 2500) // 2.5 seconds delay
-
-            return () => clearTimeout(timer)
-        }
-    }, [open])
+    const zapUrl = zapId ? `${typeof window !== 'undefined' ? window.location.origin : ''}/builder?id=${zapId}` : ''
 
     const handleCopyUrl = () => {
         navigator.clipboard.writeText(zapUrl)
@@ -47,38 +24,20 @@ export function PublishModal({ open, onOpenChange }: PublishModalProps) {
         setTimeout(() => setCopied(false), 2000)
     }
 
-    const handleRetry = () => {
-        setState('publishing')
-
-        const timer = setTimeout(() => {
-            const isSuccess = false
-
-            if (isSuccess) {
-                const generatedUrl = `https://zapier.app/editor/${Math.random().toString(36).substr(2, 9)}`
-                setZapUrl(generatedUrl)
-                setState('error')
-            } else {
-                setState('error')
-            }
-        }, 2500)
-
-        return () => clearTimeout(timer)
-    }
-
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle>
-                        {state === 'publishing' && 'Publishing Your Zap'}
-                        {state === 'success' && 'Zap Published Successfully!'}
-                        {state === 'error' && 'Publication Failed'}
+                        {status === 'publishing' && 'Publishing Your Zap'}
+                        {status === 'success' && 'Zap Published Successfully!'}
+                        {status === 'error' && 'Publication Failed'}
                     </DialogTitle>
                 </DialogHeader>
 
                 <div className="p-6 pt-2">
                     {/* Publishing State */}
-                    {state === 'publishing' && (
+                    {status === 'publishing' && (
                         <div className="flex flex-col items-center justify-center py-8">
                             <div className="relative">
                                 <Loader2 className="h-16 w-16 text-primary animate-spin" />
@@ -94,7 +53,7 @@ export function PublishModal({ open, onOpenChange }: PublishModalProps) {
                     )}
 
                     {/* Success State */}
-                    {state === 'success' && (
+                    {status === 'success' && (
                         <div className="space-y-4">
                             <div className="flex flex-col items-center justify-center py-6">
                                 <div className="relative">
@@ -154,7 +113,7 @@ export function PublishModal({ open, onOpenChange }: PublishModalProps) {
                     )}
 
                     {/* Error State */}
-                    {state === 'error' && (
+                    {status === 'error' && (
                         <div className="space-y-4">
                             <div className="flex flex-col items-center justify-center py-6">
                                 <div className="relative">
@@ -179,7 +138,7 @@ export function PublishModal({ open, onOpenChange }: PublishModalProps) {
                                 </Button>
                                 <Button
                                     className="flex-1"
-                                    onClick={handleRetry}
+                                    onClick={onRetry}
                                 >
                                     Retry
                                 </Button>

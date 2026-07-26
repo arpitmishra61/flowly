@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { Zap } from "@/app/page"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 
 interface ZapCardProps {
     zap: Zap
@@ -15,6 +16,7 @@ interface ZapCardProps {
 }
 
 export function ZapCard({ zap, onToggle, onDelete }: ZapCardProps) {
+    const router = useRouter()
     const [showMenu, setShowMenu] = useState(false)
     const [copied, setCopied] = useState(false)
 
@@ -66,7 +68,10 @@ export function ZapCard({ zap, onToggle, onDelete }: ZapCardProps) {
                             />
                             <div className="absolute right-0 top-10 z-20 w-48 bg-white rounded-lg border shadow-lg py-1">
                                 <button
-                                    onClick={() => { }}
+                                    onClick={() => {
+                                        setShowMenu(false)
+                                        router.push(`/builder?id=${zap.id}`)
+                                    }}
                                     className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
                                 >
                                     <ExternalLink className="h-4 w-4" />

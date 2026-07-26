@@ -27,7 +27,8 @@ async function main() {
       }
 
       const parsedValue = JSON.parse(message.value?.toString());
-      const zapRunId = parsedValue.id;
+      console.log("parsed value", parsedValue);
+      const zapRunId = parsedValue.zapRunId;
       const stage = parsedValue.stage;
 
       const zapRunDetails = await db.zapRun.findFirst({
