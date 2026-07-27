@@ -4,13 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx hook.ts"
+    "dev": "tsx hook.ts",
+    "start": "tsx hook.ts"
   },
   "dependencies": {
     "@repo/db": "workspace:*",
     "cors": "^2.8.6",
     "dotenv": "^17.2.4",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "tsx": "^4.20.6"
   },
   "keywords": [],
   "author": "",

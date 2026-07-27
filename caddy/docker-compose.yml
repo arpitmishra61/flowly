@@ -1,0 +1,30 @@
+# Standalone reverse-proxy stack — deliberately its own compose project,
+# independent of both the investo and flowly backend stacks.
+#
+# Uses network_mode: host instead of joining either stack's Docker network:
+# Caddy binds 80/443 straight on the host, and reaches both backends via
+# their already-published host ports (127.0.0.1:<port>), the same way any
+# external client would. No shared "edge" network, no cross-stack
+# container-name DNS, no coupling — each stack can be redeployed
+# independently without touching this one.
+#
+# Requires: investo backend + flowly backend already running with their
+# ports published on the host (investo: 8000, 5001 · flowly: 5002, 3002).
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: edge-caddy
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    cpus: 0.25
+    mem_limit: 128m
+    mem_reservation: 64m
+
+volumes:
+  caddy-data:
+  caddy-config:

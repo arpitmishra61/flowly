@@ -4,11 +4,13 @@
   "description": "A server which produce things to kafka ",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx sweeper.ts"
+    "dev": "tsx sweeper.ts",
+    "start": "tsx sweeper.ts"
   },
   "dependencies": {
     "@repo/kafka": "workspace:*",
-    "@repo/db": "workspace:*"
+    "@repo/db": "workspace:*",
+    "tsx": "^4.20.6"
   },
   "author": "Arpit",
   "license": "MIT"

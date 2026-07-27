@@ -7,7 +7,7 @@ export function getKafka() {
   if (!kafkaInstance) {
     kafkaInstance = new Kafka({
       clientId: "zaps-queue",
-      brokers: ["localhost:9092"],
+      brokers: (process.env.KAFKA_BROKERS ?? "localhost:9092").split(","),
     });
     async function checkKafkaConnection(
       kafkaInstance: Kafka,

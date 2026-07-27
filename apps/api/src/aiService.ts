@@ -179,7 +179,8 @@ export async function processMessage(
     };
   }
 
-  const url = `http://localhost:3002/hooks/catch/${userId}/${hookId}`;
+  const HOOK_URL = process.env.HOOK_URL ?? "http://localhost:3002";
+  const url = `${HOOK_URL}/hooks/catch/${userId}/${hookId}`;
   const response = await fetch(url, {
     method: "POST",
     headers: {

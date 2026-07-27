@@ -4,12 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx worker.ts"
+    "dev": "tsx worker.ts",
+    "start": "tsx worker.ts"
   },
   "dependencies": {
     "@repo/db": "workspace:*",
     "@repo/kafka": "workspace:*",
-    "nodemailer": "^8.0.7"
+    "nodemailer": "^8.0.7",
+    "tsx": "^4.20.6"
   },
   "keywords": [],
   "author": "",
