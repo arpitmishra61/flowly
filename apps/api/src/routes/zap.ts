@@ -3,10 +3,12 @@ import { ZapCreateSchema } from "../types/main";
 import db from "@repo/db/client";
 import "dotenv/config";
 import { AuthedRequest, requireAuth } from "../middleware/auth";
+import { userLimiter } from "../middleware/rateLimit";
 
 const router = express.Router();
 
 router.use(requireAuth);
+router.use(userLimiter);
 
 router.post("/", async (req: AuthedRequest, res) => {
   const body = req.body;

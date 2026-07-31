@@ -1,9 +1,11 @@
 import db from "@repo/db/client";
 import express from "express";
 import { AuthedRequest, requireAuth } from "../middleware/auth";
+import { userLimiter } from "../middleware/rateLimit";
 const router = express.Router();
 
 router.use(requireAuth);
+router.use(userLimiter);
 
 router.get("/", async (req: AuthedRequest, res) => {
   const user = await db.user.findUnique({

@@ -127,10 +127,9 @@ These are current, verified facts about the code, not hypothetical risks:
    — broker loss = topic loss. No idea of partition count vs. consumer count
    for `zap-events` beyond the default (`KAFKA_NUM_PARTITIONS: 3`), and only
    one `worker` process/consumer is ever run, so partitions 1–2 sit idle.
-5. **Action handlers are not idempotent.** `sendMail`/`createIssue` have no
-   dedupe key. Combined with at-least-once delivery, a worker crash after
-   sending mail but before `commitOffsets` **will** re-send that email on
-   redelivery.
+5. ~~**Action handlers are not idempotent.**~~ **Resolved.** See §3 item 3
+   and `AGENTS.md` §"Idempotent action execution" — an `ActionExecution`
+   dedupe table now makes redelivery-after-success a no-op.
 6. **No dead-letter path.** If an action throws, there's no visible
    try/catch around the Gmail/GitHub branches in `worker.ts` — an unhandled
    rejection kills stage processing for that message with no retry cap, no
@@ -186,10 +185,12 @@ doesn't block the others:
    external system, not `apps/web`, so this exact JWT approach doesn't
    transfer directly; needs a per-zap signing secret or similar).
 2. ~~**Centralize the API base URL.**~~ Done — see §2, weak point 7.
-3. **Idempotent action execution.** Give each `(zapRunId, stage)` pair a
-   dedupe key (e.g. unique constraint on an `ActionExecution` table keyed by
-   `zapRunId + sortingOrder`, checked before calling `sendMail`/
-   `createIssue`) so Kafka redelivery can't double-send.
+3. ~~**Idempotent action execution.**~~ Done. `ActionExecution` table with a
+   unique constraint on `(zapRunId, sortingOrder)`, checked before calling
+   `sendMail`/`createIssue` — Kafka redelivery of an already-processed stage
+   is now a no-op instead of a duplicate send. See `AGENTS.md` §"Idempotent
+   action execution". Note this only covers the *redelivery-after-success*
+   case — item 4 below (DLQ/retry cap for outright failures) is still open.
 4. **Error handling + dead-letter queue in the worker.** Wrap each action
    branch in try/catch, cap retries (e.g. via a retry count in the Kafka
    message or a `ZapRun.retryCount` column), and route exhausted messages to
@@ -218,9 +219,15 @@ doesn't block the others:
 - Stateless by construction (one insert, no local state) — already
   horizontally scalable behind a load balancer. Priority is making sure it's
   actually run as ≥2 replicas in production, not scaling logic changes.
-- Add per-user/per-zap rate limiting at this layer (e.g. token bucket keyed
-  on `zapId` in Redis) so one noisy webhook source can't flood `ZapRun`
-  inserts and starve other users downstream.
+- ~~Add per-zap rate limiting at this layer~~ **Done** — `apps/hook` now
+  applies an in-memory (`express-rate-limit`) token bucket keyed on `zapId`
+  (30 req/min) so one noisy webhook source can't flood `ZapRun` inserts and
+  starve other users downstream. **Note the caveat**: in-memory storage is
+  correct only as long as `apps/hook` stays a single replica (true today,
+  see §2 weak point 9) — resets on restart, and would under-count if run as
+  >1 replica since each process keeps its own counters. Move to a shared
+  store (Redis) if/when this service is horizontally scaled. See
+  `AGENTS.md` §"Rate limiting" for the full writeup.
 
 ### 4.2 Trigger → queue handoff (`apps/sweeper`)
 
@@ -292,7 +299,11 @@ doesn't block the others:
 
 - `apps/api` is stateless Express — scale horizontally behind a load
   balancer; service-to-service auth (§3 item 1) is now in place, so this is
-  no longer blocked, no code changes needed for that specifically.
+  no longer blocked, no code changes needed for that specifically. One thing
+  that *would* need a code change first: `apps/api`'s rate limiters
+  (`AGENTS.md` §"Rate limiting") use `express-rate-limit`'s in-memory store,
+  correct only for a single replica — move to a shared store (Redis) before
+  actually running more than one.
 - `apps/web` is a standard Next.js app — deploy to a platform with built-in
   edge/CDN caching (Vercel or equivalent) for static assets and the
   landing/sign-in page; the dashboard/builder are already client-rendered
@@ -323,11 +334,17 @@ faster. Rough order:
 
 1. ~~Service-to-service auth, apps/web ↔ apps/api (§3 item 1)~~ Done.
    `apps/hook` auth (§2 weak point 2) is the same class of issue, still open.
-2. Idempotent actions + DLQ (§3 items 3–4) — makes retries/redelivery safe
-3. Observability basics (§4.7) — needed to safely operate what comes next
-4. Kafka replication + partition-aware multi-replica workers (§3 item 7, §4.3, §4.4)
-5. Sweeper → push-based trigger handoff (§4.2)
-6. DB indexing/read replicas/partitioning (§4.5) as volume actually demands it
+2. ~~Idempotent actions (§3 item 3)~~ Done — redelivery-after-success is now
+   safe. **DLQ/retry cap (§3 item 4) is still open** — a permanently-failing
+   action still has no cap and no visibility, only the duplicate-send case
+   is fixed.
+3. ~~Per-zap webhook rate limiting (§4.1)~~ Done, alongside a general
+   per-user/IP rate limit added to `apps/api` that wasn't previously
+   itemized. Both are in-memory (single-replica-only) — see §4.6's caveat.
+4. Observability basics (§4.7) — needed to safely operate what comes next
+5. Kafka replication + partition-aware multi-replica workers (§3 item 7, §4.3, §4.4)
+6. Sweeper → push-based trigger handoff (§4.2)
+7. DB indexing/read replicas/partitioning (§4.5) as volume actually demands it
 
 ---
 

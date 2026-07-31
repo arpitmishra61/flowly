@@ -9,11 +9,18 @@ import cors from "cors";
 import "dotenv/config";
 import { processMessage } from "./aiService";
 import { AuthedRequest, requireAuth } from "./middleware/auth";
+import { generalLimiter, chatLimiter } from "./middleware/rateLimit";
 
 const app = express();
 
+// Caddy sits in front of this service in production (see system-design.md
+// §5) as a single reverse-proxy hop — trust its X-Forwarded-For so
+// express-rate-limit keys on the real client IP instead of Caddy's.
+app.set("trust proxy", 1);
+
 app.use(cors());
 app.use(express.json());
+app.use(generalLimiter);
 app.get("/", (_, res) => res.send("working  "));
 app.use("/api/v1/actions", actionRouter);
 app.use("/api/v1/triggers", triggerRouter);
@@ -21,7 +28,7 @@ app.use("/api/v1/zap", zapRouter);
 app.use("/api/v1/hook", hookRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/contacts", contactRouter);
-app.post("/api/v1/chat", requireAuth, async (req: AuthedRequest, res) => {
+app.post("/api/v1/chat", requireAuth, chatLimiter, async (req: AuthedRequest, res) => {
   const { message, hookId } = req.body as {
     message?: string;
     hookId?: string;
