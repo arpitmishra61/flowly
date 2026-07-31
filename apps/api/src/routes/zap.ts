@@ -2,10 +2,13 @@ import express from "express";
 import { ZapCreateSchema } from "../types/main";
 import db from "@repo/db/client";
 import "dotenv/config";
+import { AuthedRequest, requireAuth } from "../middleware/auth";
 
 const router = express.Router();
 
-router.post("/", async (req, res) => {
+router.use(requireAuth);
+
+router.post("/", async (req: AuthedRequest, res) => {
   const body = req.body;
   const parsedData = ZapCreateSchema.safeParse(body);
   if (!parsedData.success) {
@@ -16,7 +19,7 @@ router.post("/", async (req, res) => {
 
   const zap = await db.zap.create({
     data: {
-      userId: parsedData.data.userId ?? 1,
+      userId: req.userId!,
       trigger: {
         create: {
           availTriggerId: +parsedData.data.availableTriggerId,
@@ -37,7 +40,7 @@ router.post("/", async (req, res) => {
   res.json({ zapId: zap.id });
 });
 
-router.get("/detail/:id", async (req, res) => {
+router.get("/detail/:id", async (req: AuthedRequest, res) => {
   const { id } = req.params;
   try {
     const zap = await db.zap.findUnique({
@@ -61,6 +64,9 @@ router.get("/detail/:id", async (req, res) => {
 
     if (!zap) {
       return res.status(404).json({ message: "Zap not found" });
+    }
+    if (zap.userId !== req.userId) {
+      return res.status(403).json({ message: "Forbidden" });
     }
 
     res.json({
@@ -94,7 +100,7 @@ router.get("/detail/:id", async (req, res) => {
   }
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", async (req: AuthedRequest, res) => {
   const { id } = req.params;
   const body = req.body;
   const parsedData = ZapCreateSchema.safeParse(body);
@@ -108,6 +114,9 @@ router.put("/:id", async (req, res) => {
     const existing = await db.zap.findUnique({ where: { id } });
     if (!existing) {
       return res.status(404).json({ message: "Zap not found" });
+    }
+    if (existing.userId !== req.userId) {
+      return res.status(403).json({ message: "Forbidden" });
     }
 
     await db.$transaction([
@@ -136,12 +145,15 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", async (req: AuthedRequest, res) => {
   const { id } = req.params;
   try {
     const existing = await db.zap.findUnique({ where: { id } });
     if (!existing) {
       return res.status(404).json({ message: "Zap not found" });
+    }
+    if (existing.userId !== req.userId) {
+      return res.status(403).json({ message: "Forbidden" });
     }
 
     await db.$transaction([
@@ -159,14 +171,13 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-router.get("/:pageNo", async (req, res) => {
+router.get("/:pageNo", async (req: AuthedRequest, res) => {
   let { pageNo } = req.params;
-  const { userId } = req.query;
   const page = +pageNo;
   const limit = 10;
   try {
     const zaps = await db.zap.findMany({
-      where: userId ? { userId: +userId } : undefined,
+      where: { userId: req.userId },
       take: limit,
       include: {
         trigger: {

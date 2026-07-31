@@ -6,8 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertTriangle, ExternalLink } from "lucide-react";
-
-const API = "http://localhost:5001";
+import { apiFetch } from "@/lib/apiClient";
 
 interface Contact {
   id: number;
@@ -45,7 +44,7 @@ export default function SettingsPage() {
 
   const loadContacts = () => {
     if (!email) return;
-    fetch(`${API}/api/v1/contacts?email=${encodeURIComponent(email)}`)
+    apiFetch(`/api/v1/contacts`)
       .then((res) => res.json())
       .then((data) => setContacts(data.contacts || []))
       .catch(() => setContacts([]));
@@ -53,7 +52,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!email) return;
-    fetch(`${API}/api/v1/user/google-secret/status?email=${encodeURIComponent(email)}`)
+    apiFetch(`/api/v1/user/google-secret/status`)
       .then((res) => res.json())
       .then((data) => setConfigured(!!data.configured))
       .catch(() => setConfigured(null));
@@ -61,7 +60,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!email) return;
-    fetch(`${API}/api/v1/user/github-token/status?email=${encodeURIComponent(email)}`)
+    apiFetch(`/api/v1/user/github-token/status`)
       .then((res) => res.json())
       .then((data) => setGithubConfigured(!!data.configured))
       .catch(() => setGithubConfigured(null));
@@ -74,7 +73,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!email) return;
-    fetch(`${API}/api/v1/user/hook-id?email=${encodeURIComponent(email)}`)
+    apiFetch(`/api/v1/user/hook-id`)
       .then((res) => res.json())
       .then((data) => setSavedHookId(data.hookId || ""))
       .catch(() => setSavedHookId(""));
@@ -85,11 +84,10 @@ export default function SettingsPage() {
     setContactSaving(true);
     setContactError("");
     try {
-      const res = await fetch(`${API}/api/v1/contacts`, {
+      const res = await apiFetch(`/api/v1/contacts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email,
           name: contactName.trim(),
           contactEmail: contactEmail.trim(),
         }),
@@ -114,10 +112,10 @@ export default function SettingsPage() {
     setGithubError("");
     setGithubSuccess(false);
     try {
-      const res = await fetch(`${API}/api/v1/user/github-token`, {
+      const res = await apiFetch(`/api/v1/user/github-token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, githubToken: githubToken.trim() }),
+        body: JSON.stringify({ githubToken: githubToken.trim() }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -139,10 +137,10 @@ export default function SettingsPage() {
     setHookError("");
     setHookSuccess(false);
     try {
-      const res = await fetch(`${API}/api/v1/user/hook-id`, {
+      const res = await apiFetch(`/api/v1/user/hook-id`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, hookId: hookId.trim() }),
+        body: JSON.stringify({ hookId: hookId.trim() }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -164,10 +162,10 @@ export default function SettingsPage() {
     setError("");
     setSuccess(false);
     try {
-      const res = await fetch(`${API}/api/v1/user/google-secret`, {
+      const res = await apiFetch(`/api/v1/user/google-secret`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, googleSecret: password.trim() }),
+        body: JSON.stringify({ googleSecret: password.trim() }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {

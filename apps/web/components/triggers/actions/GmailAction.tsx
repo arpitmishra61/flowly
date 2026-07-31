@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import AutocompleteBox from '@/components/AutocompleteBox';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
+import { apiFetch } from '@/lib/apiClient';
 
 export default function GmailAction({ nodeId }: { nodeId: string }) {
 
@@ -17,15 +18,12 @@ export default function GmailAction({ nodeId }: { nodeId: string }) {
     const { data: session } = useSession()
     const [passwordConfigured, setPasswordConfigured] = useState<boolean | null>(null)
 
-
-
-    const API = "http://localhost:5001";
     console.log("actions", actions)
 
     useEffect(() => {
         const email = session?.user?.email
         if (!email) return
-        fetch(`${API}/api/v1/user/google-secret/status?email=${encodeURIComponent(email)}`)
+        apiFetch(`/api/v1/user/google-secret/status`)
             .then(res => res.json())
             .then(data => setPasswordConfigured(!!data.configured))
             .catch(() => setPasswordConfigured(null))

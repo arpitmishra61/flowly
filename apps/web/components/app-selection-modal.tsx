@@ -9,8 +9,8 @@ import axios from "axios"
 import Image from "next/image"
 import { useAtom } from "jotai"
 import { ActionsAtom, TriggerAtom } from "@/atoms"
+import { API_URL as API } from "@/lib/api"
 
-const API = "http://localhost:5001"
 interface AppSelectionModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void

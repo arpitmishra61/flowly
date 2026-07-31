@@ -8,9 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ZapCard } from "@/components/zap-card"
 import Link from "next/link"
-import axios from "axios"
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5001"
+import { apiClient } from "@/lib/apiClient"
 
 type TriggerInfo = {
     name: string;
@@ -41,9 +39,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (sessionStatus !== "authenticated") return
-        axios.get(`${API_URL}/api/v1/zap/1`, {
-            params: { userId: session.user.id },
-        }).then(res => {
+        apiClient.get(`/api/v1/zap/1`).then(res => {
             setZaps(res.data)
         }).catch(err => {
             console.log("error fetching zaps")
@@ -68,7 +64,7 @@ export default function Dashboard() {
 
     const handleDeleteZap = (id: string) => {
         if (confirm('Are you sure you want to delete this Zap?')) {
-            axios.delete(`${API_URL}/api/v1/zap/${id}`)
+            apiClient.delete(`/api/v1/zap/${id}`)
                 .then(() => setZaps(zaps => zaps.filter(zap => zap.id !== id)))
                 .catch(err => console.log("error deleting zap", err))
         }

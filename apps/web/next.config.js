@@ -1,14 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Pre-existing TS/ESLint errors (see AGENTS.md) currently block `next build`
+  // Pre-existing TS errors (see AGENTS.md) currently block `next build`
   // outright. Downgrading to non-fatal so builds/deploys succeed while those
   // get cleaned up — errors still print in the build log, they just don't
-  // fail it.
+  // fail it. (ESLint is no longer part of `next build` as of Next 16, so
+  // there's no equivalent eslint flag needed here.)
   typescript: {
     ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
   },
   images: {
     dangerouslyAllowSVG: true,

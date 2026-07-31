@@ -1,14 +1,13 @@
 import axios from "axios";
 import { App, TriggerNode, ActionNode } from "./lib/types";
 import { atom } from "jotai";
+import { API_URL as API } from "./lib/api";
 
 export const TriggerAtom = atom<Partial<TriggerNode | null>>(null);
 export const ActionsAtom = atom<Partial<ActionNode[] | null>>(null);
 export const MetaDataAtom = atom<Record<string, string> | null>(null);
 export const SaveNodeAction = atom<any>(null);
 export const PublishModalOpenAtom = atom<boolean>(false);
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5001";
 
 export const fetchTriggerData = atom(null, async (get, set) => {
   if (get(TriggerAtom)?.app?.options) return;

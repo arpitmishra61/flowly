@@ -3,10 +3,10 @@ import { Button } from './ui/button'
 import { AudioWaveform, CopyIcon, MoveRight, WebhookIcon } from 'lucide-react'
 import { useAtom } from 'jotai'
 import { fetchTriggerData, TriggerAtom } from '@/atoms'
+import { API_URL as API } from '@/lib/api'
 
 export default function Webhook() {
 
-    const API = "http://localhost:5001";
     const [trigger, setTrigger] = useAtom(TriggerAtom);
     const [, fetchData] = useAtom(fetchTriggerData);
     const metaData = trigger?.app?.metaData || {} as { jsonData: string, webhookUrl: string }

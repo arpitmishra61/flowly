@@ -1,16 +1,13 @@
 import db from "@repo/db/client";
 import express from "express";
+import { AuthedRequest, requireAuth } from "../middleware/auth";
 const router = express.Router();
 
-router.get("/", async (req, res) => {
-  const { email } = req.query as { email?: string };
+router.use(requireAuth);
 
-  if (!email) {
-    return res.status(400).json({ success: false, message: "email is required" });
-  }
-
+router.get("/", async (req: AuthedRequest, res) => {
   const user = await db.user.findUnique({
-    where: { email },
+    where: { email: req.userEmail },
     include: { contacts: true },
   });
 
@@ -24,21 +21,20 @@ router.get("/", async (req, res) => {
   });
 });
 
-router.post("/", async (req, res) => {
-  const { email, name, contactEmail } = req.body as {
-    email?: string;
+router.post("/", async (req: AuthedRequest, res) => {
+  const { name, contactEmail } = req.body as {
     name?: string;
     contactEmail?: string;
   };
 
-  if (!email || !name || !contactEmail) {
+  if (!name || !contactEmail) {
     return res.status(400).json({
       success: false,
-      message: "email, name and contactEmail are required",
+      message: "name and contactEmail are required",
     });
   }
 
-  const user = await db.user.findUnique({ where: { email } });
+  const user = await db.user.findUnique({ where: { email: req.userEmail } });
   if (!user) {
     return res.status(404).json({ success: false, message: "User not found" });
   }

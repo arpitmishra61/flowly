@@ -11,16 +11,12 @@ import { ActionsAtom, MetaDataAtom, PublishModalOpenAtom, SaveNodeAction, Trigge
 import { ACTION_OUTPUT_KEYS } from "@/lib/actionOutputKeys"
 import { flattenObject } from "@/lib/flattenObject"
 import { getDefaultStore, useAtom, useSetAtom } from "jotai"
-import { useSession } from "next-auth/react"
 
-import axios from "axios"
+import { apiClient } from "@/lib/apiClient"
 import { PublishModal } from "./PublishModal"
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5001"
 
 
 export function ZapBuilder({ zapId }: { zapId?: string | null }) {
-  const { data: session } = useSession()
   const [nodes, setNodes] = useState<ZapNodeType[]>([
     { id: '1', type: 'trigger', app: null, configured: false }
   ])
@@ -117,7 +113,7 @@ export function ZapBuilder({ zapId }: { zapId?: string | null }) {
   useEffect(() => {
     if (!zapId) return
 
-    axios.get(`${API_URL}/api/v1/zap/detail/${zapId}`).then(async (res) => {
+    apiClient.get(`/api/v1/zap/detail/${zapId}`).then(async (res) => {
       const zap = res.data
       setZapName(zap.name)
 
@@ -125,8 +121,8 @@ export function ZapBuilder({ zapId }: { zapId?: string | null }) {
 
       if (zap.trigger) {
         const triggerId = zap.trigger.type.id
-        const optionsRes = await axios.get<{ name: string }[]>(
-          `${API_URL}/api/v1/triggers/options/${triggerId}`
+        const optionsRes = await apiClient.get<{ name: string }[]>(
+          `/api/v1/triggers/options/${triggerId}`
         )
         const options = optionsRes.data
         const selectedOption = options[0]?.name ?? ""
@@ -152,8 +148,8 @@ export function ZapBuilder({ zapId }: { zapId?: string | null }) {
       for (const [index, action] of zap.actions.entries()) {
         const nodeId = `action-${index}`
         const actionId = action.type.id
-        const optionsRes = await axios.get<{ name: string }[]>(
-          `${API_URL}/api/v1/actions/options/${actionId}`
+        const optionsRes = await apiClient.get<{ name: string }[]>(
+          `/api/v1/actions/options/${actionId}`
         )
         const options = optionsRes.data
         const selectedOption = options[0]?.name ?? ""
@@ -223,7 +219,7 @@ export function ZapBuilder({ zapId }: { zapId?: string | null }) {
     setPublishStatus('publishing')
     setPublishModalOpen(true)
 
-    const url = zapId ? `${API_URL}/api/v1/zap/${zapId}` : `${API_URL}/api/v1/zap`
+    const url = zapId ? `/api/v1/zap/${zapId}` : `/api/v1/zap`
     const data = {
       availableTriggerId: `${triggerData?.id}`,
       triggerMetadata: triggerData?.app?.metaData.jsonData,
@@ -233,10 +229,9 @@ export function ZapBuilder({ zapId }: { zapId?: string | null }) {
           actionMetadata: action?.app?.metaData.jsonData
         }
       }),
-      userId: session?.user.id
     };
 
-    const request = zapId ? axios.put(url, data) : axios.post(url, data)
+    const request = zapId ? apiClient.put(url, data) : apiClient.post(url, data)
     request
       .then(response => {
         setPublishedZapId(response.data?.zapId ?? zapId ?? null)

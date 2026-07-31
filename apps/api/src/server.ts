@@ -8,6 +8,7 @@ import contactRouter from "./routes/contact";
 import cors from "cors";
 import "dotenv/config";
 import { processMessage } from "./aiService";
+import { AuthedRequest, requireAuth } from "./middleware/auth";
 
 const app = express();
 
@@ -20,14 +21,13 @@ app.use("/api/v1/zap", zapRouter);
 app.use("/api/v1/hook", hookRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/contacts", contactRouter);
-app.post("/api/v1/chat", async (req, res) => {
-  console.log(req.body);
-  const { message, from, userId, hookId } = req.body as {
+app.post("/api/v1/chat", requireAuth, async (req: AuthedRequest, res) => {
+  const { message, hookId } = req.body as {
     message?: string;
-    from?: string;
-    userId?: string;
     hookId?: string;
   };
+  const from = req.userEmail;
+  const userId = req.userId?.toString();
 
   if (!message || typeof message !== "string" || message.trim() === "") {
     res.status(400).json({ error: "message field is required" });

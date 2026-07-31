@@ -1,5 +1,29 @@
 import { signIn } from "@/auth";
 import { Button } from "@/components/ui/button";
+import { Workflow, Zap, MessageSquare, ShieldCheck } from "lucide-react";
+
+const FEATURES = [
+  {
+    icon: Workflow,
+    title: "Visual builder",
+    description: "Drag and drop triggers and actions to design workflows without writing code.",
+  },
+  {
+    icon: Zap,
+    title: "Instant triggers",
+    description: "Kick off automations the moment something happens — no polling, no delays.",
+  },
+  {
+    icon: MessageSquare,
+    title: "AI assistant",
+    description: "Describe what you want in plain language and let Flowly build the workflow.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Reliable by default",
+    description: "Every run is tracked and retried automatically so nothing falls through the cracks.",
+  },
+];
 
 export default async function SignInPage({
   searchParams,
@@ -8,27 +32,69 @@ export default async function SignInPage({
 }) {
   const { callbackUrl } = await searchParams;
 
+  const SignInForm = ({ className }: { className?: string }) => (
+    <form
+      action={async () => {
+        "use server";
+        await signIn("google", { redirectTo: callbackUrl || "/" });
+      }}
+      className={className}
+    >
+      <Button type="submit" size="lg" className="w-full gap-2">
+        <GoogleIcon />
+        Sign in with Google
+      </Button>
+    </form>
+  );
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30 px-6">
-      <div className="w-full max-w-sm rounded-2xl border bg-white/80 backdrop-blur-lg shadow-sm p-8 text-center">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-          Welcome to Flowly
-        </h1>
-        <p className="text-sm text-muted-foreground mt-2 mb-8">
-          Sign in to build and manage your automated workflows.
-        </p>
-        <form
-          action={async () => {
-            "use server";
-            await signIn("google", { redirectTo: callbackUrl || "/" });
-          }}
-        >
-          <Button type="submit" size="lg" className="w-full gap-2">
-            <GoogleIcon />
-            Sign in with Google
-          </Button>
-        </form>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
+      <header className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
+        <span className="text-lg font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+          Flowly
+        </span>
+        <SignInForm className="hidden sm:block" />
+      </header>
+
+      <main className="max-w-6xl mx-auto px-6">
+        <section className="flex flex-col items-center text-center py-16 sm:py-24">
+          <h1 className="text-4xl sm:text-6xl font-bold tracking-tight max-w-3xl">
+            Automate your work,{" "}
+            <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              without the busywork
+            </span>
+          </h1>
+          <p className="text-lg text-muted-foreground mt-6 max-w-xl">
+            Flowly connects your favorite apps with triggers and actions so your workflows run
+            themselves — build once, automate forever.
+          </p>
+          <div className="w-full max-w-xs mt-8">
+            <SignInForm />
+            <p className="text-xs text-muted-foreground mt-3">
+              Free to get started. No credit card required.
+            </p>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-20">
+          {FEATURES.map(({ icon: Icon, title, description }) => (
+            <div
+              key={title}
+              className="rounded-2xl border bg-white/80 backdrop-blur-lg shadow-sm p-6 text-left"
+            >
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <Icon className="h-5 w-5 text-primary" />
+              </div>
+              <h3 className="font-semibold mb-1.5">{title}</h3>
+              <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
+          ))}
+        </section>
+      </main>
+
+      <footer className="max-w-6xl mx-auto px-6 py-8 border-t text-sm text-muted-foreground text-center">
+        © {new Date().getFullYear()} Flowly. All rights reserved.
+      </footer>
     </div>
   );
 }

@@ -1,29 +1,22 @@
 "use client"
 import { useState, useRef, useEffect } from "react";
 import { useSession } from "next-auth/react";
-
-const API_BASE = "http://localhost:5001";
-const BACKEND_URL = `${API_BASE}/api/v1/chat`;
+import { apiFetch } from "@/lib/apiClient";
 
 const MOCK_MODE = true; // set false when backend is running
 
-async function fetchHookConfig(email: string) {
-    const res = await fetch(`${API_BASE}/api/v1/user/hook-id?email=${encodeURIComponent(email)}`);
-    if (!res.ok) return { userId: undefined, hookId: undefined };
+async function fetchHookConfig() {
+    const res = await apiFetch(`/api/v1/user/hook-id`);
+    if (!res.ok) return { hookId: undefined };
     const data = await res.json();
-    return { userId: data.userId, hookId: data.hookId };
+    return { hookId: data.hookId };
 }
 
-async function sendToBackend(
-    message: string,
-    from?: string | null,
-    userId?: string | number | null,
-    hookId?: string | null,
-) {
-    const res = await fetch(BACKEND_URL, {
+async function sendToBackend(message: string, hookId?: string | null) {
+    const res = await apiFetch(`/api/v1/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, from, userId, hookId }),
+        body: JSON.stringify({ message, hookId }),
     });
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
     return res.json();
@@ -185,7 +178,7 @@ export default function App() {
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
-    const [hookConfig, setHookConfig] = useState({ userId: undefined, hookId: undefined });
+    const [hookConfig, setHookConfig] = useState({ hookId: undefined });
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
 
@@ -196,7 +189,7 @@ export default function App() {
     useEffect(() => {
         const email = session?.user?.email;
         if (!email) return;
-        fetchHookConfig(email).then(setHookConfig);
+        fetchHookConfig().then(setHookConfig);
     }, [session?.user?.email]);
 
     const send = async (text) => {
@@ -214,7 +207,7 @@ export default function App() {
         setLoading(true);
 
         try {
-            const data = await sendToBackend(msg, session?.user?.email, hookConfig.userId, hookConfig.hookId);
+            const data = await sendToBackend(msg, hookConfig.hookId);
             const aiMsg = {
                 id: Date.now() + 1, role: "assistant",
                 type: data.type,

@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
+import { apiFetch } from "@/lib/apiClient";
 
-const API = "http://localhost:5001";
 const WEBHOOK_STORAGE_KEY = "flowly_trigger_webhook_url";
 
 interface Contact {
@@ -39,7 +39,7 @@ export default function TriggerPage() {
 
   useEffect(() => {
     if (!email) return;
-    fetch(`${API}/api/v1/contacts?email=${encodeURIComponent(email)}`)
+    apiFetch(`/api/v1/contacts`)
       .then((res) => res.json())
       .then((data) => setContacts(data.contacts || []))
       .catch(() => setContacts([]));

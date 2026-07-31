@@ -1,22 +1,22 @@
 import db from "@repo/db/client";
 import express from "express";
+import { AuthedRequest, requireAuth } from "../middleware/auth";
 const router = express.Router();
 
-router.post("/google-secret", async (req, res) => {
-  const { email, googleSecret } = req.body as {
-    email?: string;
-    googleSecret?: string;
-  };
+router.use(requireAuth);
 
-  if (!email || !googleSecret) {
+router.post("/google-secret", async (req: AuthedRequest, res) => {
+  const { googleSecret } = req.body as { googleSecret?: string };
+
+  if (!googleSecret) {
     return res
       .status(400)
-      .json({ success: false, message: "email and googleSecret are required" });
+      .json({ success: false, message: "googleSecret is required" });
   }
 
   try {
     const user = await db.user.update({
-      where: { email },
+      where: { email: req.userEmail },
       data: { googleSecret },
     });
     res.json({ success: true, email: user.email });
@@ -26,15 +26,9 @@ router.post("/google-secret", async (req, res) => {
   }
 });
 
-router.get("/google-secret/status", async (req, res) => {
-  const { email } = req.query as { email?: string };
-
-  if (!email) {
-    return res.status(400).json({ success: false, message: "email is required" });
-  }
-
+router.get("/google-secret/status", async (req: AuthedRequest, res) => {
   const user = await db.user.findUnique({
-    where: { email },
+    where: { email: req.userEmail },
     select: { googleSecret: true },
   });
 
@@ -45,21 +39,18 @@ router.get("/google-secret/status", async (req, res) => {
   res.json({ success: true, configured: !!user.googleSecret });
 });
 
-router.post("/github-token", async (req, res) => {
-  const { email, githubToken } = req.body as {
-    email?: string;
-    githubToken?: string;
-  };
+router.post("/github-token", async (req: AuthedRequest, res) => {
+  const { githubToken } = req.body as { githubToken?: string };
 
-  if (!email || !githubToken) {
+  if (!githubToken) {
     return res
       .status(400)
-      .json({ success: false, message: "email and githubToken are required" });
+      .json({ success: false, message: "githubToken is required" });
   }
 
   try {
     const user = await db.user.update({
-      where: { email },
+      where: { email: req.userEmail },
       data: { githubToken },
     });
     res.json({ success: true, email: user.email });
@@ -69,15 +60,9 @@ router.post("/github-token", async (req, res) => {
   }
 });
 
-router.get("/github-token/status", async (req, res) => {
-  const { email } = req.query as { email?: string };
-
-  if (!email) {
-    return res.status(400).json({ success: false, message: "email is required" });
-  }
-
+router.get("/github-token/status", async (req: AuthedRequest, res) => {
   const user = await db.user.findUnique({
-    where: { email },
+    where: { email: req.userEmail },
     select: { githubToken: true },
   });
 
@@ -88,21 +73,18 @@ router.get("/github-token/status", async (req, res) => {
   res.json({ success: true, configured: !!user.githubToken });
 });
 
-router.post("/hook-id", async (req, res) => {
-  const { email, hookId } = req.body as {
-    email?: string;
-    hookId?: string;
-  };
+router.post("/hook-id", async (req: AuthedRequest, res) => {
+  const { hookId } = req.body as { hookId?: string };
 
-  if (!email || !hookId) {
+  if (!hookId) {
     return res
       .status(400)
-      .json({ success: false, message: "email and hookId are required" });
+      .json({ success: false, message: "hookId is required" });
   }
 
   try {
     const user = await db.user.update({
-      where: { email },
+      where: { email: req.userEmail },
       data: { hookId },
     });
     res.json({ success: true, email: user.email, hookId: user.hookId });
@@ -112,15 +94,9 @@ router.post("/hook-id", async (req, res) => {
   }
 });
 
-router.get("/hook-id", async (req, res) => {
-  const { email } = req.query as { email?: string };
-
-  if (!email) {
-    return res.status(400).json({ success: false, message: "email is required" });
-  }
-
+router.get("/hook-id", async (req: AuthedRequest, res) => {
   const user = await db.user.findUnique({
-    where: { email },
+    where: { email: req.userEmail },
     select: { id: true, hookId: true },
   });
 

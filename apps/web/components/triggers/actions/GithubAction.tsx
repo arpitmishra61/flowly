@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import AutocompleteBox from '@/components/AutocompleteBox';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
+import { apiFetch } from '@/lib/apiClient';
 
 export default function GithubAction({ nodeId }: { nodeId: string }) {
 
@@ -17,12 +18,10 @@ export default function GithubAction({ nodeId }: { nodeId: string }) {
     const { data: session } = useSession()
     const [tokenConfigured, setTokenConfigured] = useState<boolean | null>(null)
 
-    const API = "http://localhost:5001";
-
     useEffect(() => {
         const email = session?.user?.email
         if (!email) return
-        fetch(`${API}/api/v1/user/github-token/status?email=${encodeURIComponent(email)}`)
+        apiFetch(`/api/v1/user/github-token/status`)
             .then(res => res.json())
             .then(data => setTokenConfigured(!!data.configured))
             .catch(() => setTokenConfigured(null))
