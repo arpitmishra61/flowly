@@ -143,14 +143,31 @@ enum ZapStatus {
 }
 
 model ZapRun {
-  id           Int           @id @default(autoincrement())
+  id           Int               @id @default(autoincrement())
   zapId        String
-  zap          Zap           @relation(fields: [zapId], references: [id])
-  metadata     Json          @default("{}")
+  zap          Zap               @relation(fields: [zapId], references: [id])
+  metadata     Json              @default("{}")
   zapRunOutbox ZapRunOutbox?
-  status       ZapStatus     @default(PENDING)
-  createdAt    DateTime      @default(now())
+  status       ZapStatus         @default(PENDING)
+  createdAt    DateTime          @default(now())
   finishedAt   DateTime?
+  executions   ActionExecution[]
+}
+
+// Idempotency record: one row per (zapRunId, sortingOrder) that actually
+// executed. The unique constraint is what makes a stage's side effect
+// (sendMail/createIssue) safe to redeliver — the worker checks for an
+// existing row before calling out, instead of relying on Kafka offset
+// commit timing alone.
+model ActionExecution {
+  id           Int      @id @default(autoincrement())
+  zapRunId     Int
+  zapRun       ZapRun   @relation(fields: [zapRunId], references: [id])
+  sortingOrder Int
+  result       Json     @default("{}")
+  createdAt    DateTime @default(now())
+
+  @@unique([zapRunId, sortingOrder])
 }
 
 model ZapRunOutbox {

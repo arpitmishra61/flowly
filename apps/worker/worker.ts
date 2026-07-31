@@ -3,6 +3,7 @@ import getKafka from "@repo/kafka/client";
 import parse from "./helper/parser";
 import sendMail from "./helper/actions/sendMail";
 import createIssue from "./helper/actions/createIssue";
+import runIdempotentAction from "./helper/idempotentAction";
 
 async function main() {
   const kafka = getKafka();
@@ -77,14 +78,16 @@ async function main() {
           return;
         }
 
-        const success = await sendMail({
-          name: zapOwner.name,
-          from: zapOwner.email,
-          pass: zapOwner.googleSecret,
-          to: reciever,
-          subject: subjectData,
-          body: bodyData,
-        });
+        const success = await runIdempotentAction(zapRunId, stage, () =>
+          sendMail({
+            name: zapOwner.name,
+            from: zapOwner.email,
+            pass: zapOwner.googleSecret,
+            to: reciever,
+            subject: subjectData,
+            body: bodyData,
+          }),
+        );
         if (success) {
           console.log("Email Sent");
           await db.zapRun.update({
@@ -110,12 +113,14 @@ async function main() {
           return;
         }
 
-        const success = await createIssue({
-          token: zapOwner.githubToken,
-          repo: repoData,
-          title: titleData,
-          body: bodyData,
-        });
+        const success = await runIdempotentAction(zapRunId, stage, () =>
+          createIssue({
+            token: zapOwner.githubToken,
+            repo: repoData,
+            title: titleData,
+            body: bodyData,
+          }),
+        );
         if (success) {
           console.log("Issue Created");
           await db.zapRun.update({
