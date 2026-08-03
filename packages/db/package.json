@@ -4,8 +4,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "seed": "tsx seed.ts",
-    "postinstall": "prisma generate"
+    "seed": "tsx seed.ts"
   },
   "keywords": [],
   "author": "",
