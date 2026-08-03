@@ -18,169 +18,193 @@ async function main() {
   await consumer.run({
     autoCommit: false,
     eachMessage: async ({ topic, partition, message }) => {
-      console.log({
-        partition,
-        offset: message.offset,
-        value: message.value?.toString(),
-      });
-      if (!message.value?.toString()) {
-        return;
-      }
-
-      const parsedValue = JSON.parse(message.value?.toString());
-      console.log("parsed value", parsedValue);
-      const zapRunId = parsedValue.zapRunId;
-      const stage = parsedValue.stage;
-
-      const zapRunDetails = await db.zapRun.findFirst({
-        where: {
-          id: zapRunId,
-        },
-        include: {
-          zap: {
-            include: {
-              user: true,
-              actions: {
-                include: {
-                  type: true,
-                },
-              },
-            },
-          },
-        },
-      });
-      const currentAction = zapRunDetails?.zap.actions.find(
-        (x) => x.sortingOrder === stage,
-      );
-
-      if (!currentAction) {
-        console.log("Current action not found?");
-        return;
-      } else {
-        console.log("current action ", currentAction);
-      }
-
-      const zapRunMetadata = zapRunDetails?.metadata;
-      const actionName = currentAction.type.name;
-      const actionMetadata = currentAction.metadata as any;
-
-      if (actionName === "Gmail") {
-        console.log("Sending mail");
-        const { body, to, subject } = actionMetadata;
-        const bodyData = parse(body, zapRunMetadata);
-        const subjectData = parse(subject, zapRunMetadata);
-        const reciever = parse(to, zapRunMetadata);
-
-        const zapOwner = zapRunDetails?.zap.user;
-
-        if (!zapOwner?.googleSecret) {
-          console.log("Zap owner has no Google app password configured");
-          return;
-        }
-
-        const success = await runIdempotentAction(zapRunId, stage, () =>
-          sendMail({
-            name: zapOwner.name,
-            from: zapOwner.email,
-            pass: zapOwner.googleSecret,
-            to: reciever,
-            subject: subjectData,
-            body: bodyData,
-          }),
-        );
-        if (success) {
-          console.log("Email Sent");
-          await db.zapRun.update({
-            where: { id: zapRunId },
-            data: { metadata: { ...(zapRunMetadata as any), gmail: success } },
-          });
-        } else {
-          console.log("Email Not Sent");
-        }
-      }
-
-      if (actionName === "Github") {
-        console.log("Creating GitHub issue");
-        const { repo, title, body } = actionMetadata;
-        const repoData = parse(repo, zapRunMetadata);
-        const titleData = parse(title, zapRunMetadata);
-        const bodyData = parse(body, zapRunMetadata);
-
-        const zapOwner = zapRunDetails?.zap.user;
-
-        if (!zapOwner?.githubToken) {
-          console.log("Zap owner has no GitHub token configured");
-          return;
-        }
-
-        const success = await runIdempotentAction(zapRunId, stage, () =>
-          createIssue({
-            token: zapOwner.githubToken,
-            repo: repoData,
-            title: titleData,
-            body: bodyData,
-          }),
-        );
-        if (success) {
-          console.log("Issue Created");
-          await db.zapRun.update({
-            where: { id: zapRunId },
-            data: { metadata: { ...(zapRunMetadata as any), github: success } },
-          });
-        } else {
-          console.log("Issue Not Created");
-        }
-      }
-
-      await new Promise((r) => setTimeout(r, 500));
-
-      const lastStage = (zapRunDetails?.zap.actions?.length || 1) - 1; // 1
-      console.log(lastStage);
-      console.log(stage);
-      if (lastStage !== stage) {
-        console.log("pushing back to the queue");
-        await producer.send({
-          topic: TOPIC_NAME,
-          messages: [
-            {
-              value: JSON.stringify({
-                stage: stage + 1,
-                zapRunId,
-              }),
-            },
-          ],
+      try {
+        await processMessage({ topic, partition, message, producer });
+      } catch (error) {
+        console.error("[Runner] Error processing message", {
+          topic,
+          partition,
+          offset: message.offset,
+          error,
         });
-      } else {
-        const result = await db.zapRun.updateMany({
-          where: {
-            id: zapRunDetails?.id,
-            status: "RUNNING",
-          },
-          data: {
-            status: "COMPLETE",
-          },
-        });
-        if (result.count) {
-          console.log("Zap Status:Completed");
-        } else {
-          console.log("Zap Status:Error");
-        }
       }
-
-      console.log(
-        "processing done for action no ",
-        parseInt(message.offset) + 1,
-      );
 
       await consumer.commitOffsets([
         {
           topic: TOPIC_NAME,
           partition: partition,
-          offset: (parseInt(message.offset) + 1).toString(), // 5
+          offset: (parseInt(message.offset) + 1).toString(),
         },
       ]);
     },
   });
+}
+
+async function processMessage({
+  topic,
+  partition,
+  message,
+  producer,
+}: {
+  topic: string;
+  partition: number;
+  message: any;
+  producer: any;
+}) {
+  const TOPIC_NAME = topic;
+  console.log({
+    partition,
+    offset: message.offset,
+    value: message.value?.toString(),
+  });
+  if (!message.value?.toString()) {
+    return;
+  }
+
+  const parsedValue = JSON.parse(message.value?.toString());
+  console.log("parsed value", parsedValue);
+  const zapRunId = parsedValue.zapRunId;
+  const stage = parsedValue.stage;
+
+  const zapRunDetails = await db.zapRun.findFirst({
+    where: {
+      id: zapRunId,
+    },
+    include: {
+      zap: {
+        include: {
+          user: true,
+          actions: {
+            include: {
+              type: true,
+            },
+          },
+        },
+      },
+    },
+  });
+  const currentAction = zapRunDetails?.zap.actions.find(
+    (x) => x.sortingOrder === stage,
+  );
+
+  if (!currentAction) {
+    console.log("Current action not found?");
+    return;
+  } else {
+    console.log("current action ", currentAction);
+  }
+
+  const zapRunMetadata = zapRunDetails?.metadata;
+  const actionName = currentAction.type.name;
+  const actionMetadata = currentAction.metadata as any;
+
+  if (actionName === "Gmail") {
+    console.log("Sending mail");
+    const { body, to, subject } = actionMetadata;
+    const bodyData = parse(body, zapRunMetadata);
+    const subjectData = parse(subject, zapRunMetadata);
+    const reciever = parse(to, zapRunMetadata);
+
+    const zapOwner = zapRunDetails?.zap.user;
+
+    if (!zapOwner?.googleSecret) {
+      console.log("Zap owner has no Google app password configured");
+      return;
+    }
+
+    const success = await runIdempotentAction(zapRunId, stage, () =>
+      sendMail({
+        name: zapOwner.name,
+        from: zapOwner.email,
+        pass: zapOwner.googleSecret,
+        to: reciever,
+        subject: subjectData,
+        body: bodyData,
+      }),
+    );
+    if (success) {
+      console.log("Email Sent");
+      await db.zapRun.update({
+        where: { id: zapRunId },
+        data: { metadata: { ...(zapRunMetadata as any), gmail: success } },
+      });
+    } else {
+      console.log("Email Not Sent");
+    }
+  }
+
+  if (actionName === "Github") {
+    console.log("Creating GitHub issue");
+    const { repo, title, body } = actionMetadata;
+    const repoData = parse(repo, zapRunMetadata);
+    const titleData = parse(title, zapRunMetadata);
+    const bodyData = parse(body, zapRunMetadata);
+
+    const zapOwner = zapRunDetails?.zap.user;
+
+    if (!zapOwner?.githubToken) {
+      console.log("Zap owner has no GitHub token configured");
+      return;
+    }
+
+    const success = await runIdempotentAction(zapRunId, stage, () =>
+      createIssue({
+        token: zapOwner.githubToken,
+        repo: repoData,
+        title: titleData,
+        body: bodyData,
+      }),
+    );
+    if (success) {
+      console.log("Issue Created");
+      await db.zapRun.update({
+        where: { id: zapRunId },
+        data: { metadata: { ...(zapRunMetadata as any), github: success } },
+      });
+    } else {
+      console.log("Issue Not Created");
+    }
+  }
+
+  await new Promise((r) => setTimeout(r, 500));
+
+  const lastStage = (zapRunDetails?.zap.actions?.length || 1) - 1; // 1
+  console.log(lastStage);
+  console.log(stage);
+  if (lastStage !== stage) {
+    console.log("pushing back to the queue");
+    await producer.send({
+      topic: TOPIC_NAME,
+      messages: [
+        {
+          value: JSON.stringify({
+            stage: stage + 1,
+            zapRunId,
+          }),
+        },
+      ],
+    });
+  } else {
+    const result = await db.zapRun.updateMany({
+      where: {
+        id: zapRunDetails?.id,
+        status: "RUNNING",
+      },
+      data: {
+        status: "COMPLETE",
+      },
+    });
+    if (result.count) {
+      console.log("Zap Status:Completed");
+    } else {
+      console.log("Zap Status:Error");
+    }
+  }
+
+  console.log(
+    "processing done for action no ",
+    parseInt(message.offset) + 1,
+  );
 }
 
 main();

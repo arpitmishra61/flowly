@@ -22,12 +22,21 @@ export default function parse(
         ...values,
       };
       for (let i = 0; i < keys.length; i++) {
+        if (localValues === null || localValues === undefined) {
+          localValues = "";
+          break;
+        }
         if (typeof localValues === "string") {
-          localValues = JSON.parse(localValues);
+          try {
+            localValues = JSON.parse(localValues);
+          } catch {
+            localValues = "";
+            break;
+          }
         }
         localValues = localValues[keys[i]];
       }
-      finalString += localValues;
+      finalString += localValues ?? "";
       startIndex = endPoint + 1;
       endIndex = endPoint + 2;
     } else {
