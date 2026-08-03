@@ -64,3 +64,12 @@ app.post("/api/v1/chat", requireAuth, chatLimiter, async (req: AuthedRequest, re
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log("Server Connected " + PORT));
+
+// Keep the process (and container) alive on unexpected errors so logs stay
+// visible instead of the container exiting and restarting silently.
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught exception:", error);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason);
+});

@@ -31,18 +31,31 @@ app.post("/hooks/catch/:userId/:zapId", webhookLimiter, async (req, res) => {
   const zapId = req.params.zapId;
   const body = req.body;
 
-  // store in db a new trigger
-  console.log("sfsf", zapId, body, userId);
-  const run = await db.zapRun.create({
-    data: {
-      zapId: zapId,
-      metadata: body,
-    },
-  });
-  res.json({
-    message: "Webhook received " + run.id,
-    userId,
-  });
+  try {
+    console.log("zap info", zapId, body, userId);
+    const run = await db.zapRun.create({
+      data: {
+        zapId: zapId,
+        metadata: body,
+      },
+    });
+    res.json({
+      message: "Webhook received " + run.id,
+      userId,
+    });
+  } catch (error) {
+    console.error("Error handling webhook:", error);
+    res.status(500).json({ message: "Failed to process webhook" });
+  }
 });
 
 app.listen(PORT, () => console.log("Hook is connected at PORT ", PORT));
+
+// Keep the process (and container) alive on unexpected errors so logs stay
+// visible instead of the container exiting and restarting silently.
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught exception:", error);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason);
+});
